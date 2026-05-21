@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import PitchSelector from "./components/PitchSelector"
 import StrikeZone from "./components/StrikeZone"
 import { getGamePitches } from "./data/pitches"
+import PitchingField from "./components/PitchingField"
 
 function App () {
   const [selected, setSelected] = useState('Q')
@@ -12,6 +13,7 @@ function App () {
       <h1 className="text-4xl font-bold text-white mb-8">Strike Zone</h1>
       <StrikeZone pitches={pitches} selected = {selected} />
       <PitchSelector pitches={pitches} selected={selected} setSelected={setSelected} />
+      <PitchingField pitches={pitches} selected={selected} />
     </div>
   )
 }
