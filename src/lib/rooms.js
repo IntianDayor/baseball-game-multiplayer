@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 
+// ROOM CREATE
 export async function createRoom(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -16,6 +17,8 @@ export async function createRoom(roomCode) {
     
 }
 
+
+// ROOM JOIN
 export async function joinRoom(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -28,5 +31,32 @@ export async function joinRoom(roomCode) {
         .single()
 
     if (error) console.error('joinRoom error:', error)
+    return data;
+}
+
+// CHECK ROOM STATUS
+export async function checkRoomStatus(roomCode) {
+    const { data, error } = await supabase
+        .from('rooms')
+        .select()
+        .eq('id', roomCode)
+        .single()
+    
+    if (error) console.error('checkRoomStatus error:', error)
+    return data;
+}
+
+// START GAME
+export async function startGame(roomCode) {
+    const { data, error } = await supabase
+        .from('rooms')
+        .update({
+            status: 'playing'
+        })
+        .select()
+        .eq('id', roomCode)
+        .single()
+    
+    if(error) console.error('startGame error:', error)
     return data;
 }

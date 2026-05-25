@@ -1,5 +1,6 @@
 import MainMenu from "./components/MainMenu"
 import Lobby from "./components/Lobby"
+import Game from "./components/Game"
 import { useState, useEffect } from "react"
 import PitchSelector from "./components/PitchSelector"
 import { getGamePitches } from "./data/pitches"
@@ -14,9 +15,9 @@ function App () {
   /* Screen Handler */
   if (screen === 'menu') return <MainMenu setScreen={setScreen} />
   if (screen === 'lobby') return <Lobby setScreen={setScreen} />
-  if (screen === 'game') return <Game setScreen={setScreen} selected={selected} pitches={pitches} />
+  if (screen === 'game') return <Game setScreen={setScreen} pitches={pitches} setSelected={setSelected} selected={selected} />
 
   return null
 }
 
-export default App
+export default App;
