@@ -5,9 +5,9 @@ export const PITCH_LIBRARY = {
     speed: 10,
     breakX: 0,
     breakY: -1,
-    breakTiming: 0,    // 0 = immediate, 1 = late
+    breakTiming: 0,
     color: "#ff4444",
-    fixed: true,       // Always assigned to Q
+    fixed: true,
   },
   curveball: {
     name: "Curveball",
@@ -22,7 +22,7 @@ export const PITCH_LIBRARY = {
     speed: 7,
     breakX: 4,
     breakY: -2,
-    breakTiming: 0.7,  // Snaps late
+    breakTiming: 0.7,
     color: "#00cfff",
   },
   slurve: {
@@ -40,12 +40,12 @@ export const PITCH_LIBRARY = {
     breakY: "random",
     breakTiming: 0,
     color: "#fbbf24",
-    chaos: true,       // Special behaviour
+    chaos: true,
   },
   screwball: {
     name: "Screwball",
     speed: 6,
-    breakX: -4,        // Opposite direction
+    breakX: -4,
     breakY: -3,
     breakTiming: 0,
     color: "#f97316",
@@ -57,14 +57,14 @@ export const PITCH_LIBRARY = {
     breakY: -2,
     breakTiming: 0,
     color: "#84cc16",
-    disguised: true,   // Looks like fastball to batter
+    disguised: true,
   },
   forkball: {
     name: "Forkball",
     speed: 6,
     breakX: 0,
     breakY: -5,
-    breakTiming: 0.8,  // Sudden late drop
+    breakTiming: 0.8,
     color: "#ec4899",
   },
 }

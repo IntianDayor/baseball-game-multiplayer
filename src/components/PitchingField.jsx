@@ -75,4 +75,4 @@ function PitchingField({ pitches, selected }) {
     )
 }
 
-export default PitchingField
+export default PitchingField;

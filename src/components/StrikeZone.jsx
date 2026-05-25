@@ -12,4 +12,4 @@ function StrikeZone ({pitches, selected}) {
     )
 }
 
-export default StrikeZone
+export default StrikeZone;

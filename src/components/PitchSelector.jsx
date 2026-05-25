@@ -32,4 +32,4 @@ function PitchSelector({pitches, selected, setSelected}) {
     )
 }
 
-export default PitchSelector
+export default PitchSelector;
