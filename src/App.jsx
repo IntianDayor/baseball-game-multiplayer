@@ -11,11 +11,27 @@ function App () {
   const [screen, setScreen] = useState('menu');
   const [selected, setSelected] = useState('Q');
   const [pitches] = useState(() => getGamePitches());
+  const [isHost, setIsHost] = useState(false);
+  const [roomCode, setRoomCode] = useState('');
 
   /* Screen Handler */
   if (screen === 'menu') return <MainMenu setScreen={setScreen} />
-  if (screen === 'lobby') return <Lobby setScreen={setScreen} />
-  if (screen === 'game') return <Game setScreen={setScreen} pitches={pitches} setSelected={setSelected} selected={selected} />
+  if (screen === 'lobby') return <Lobby 
+      setScreen={setScreen}
+      isHost={isHost}
+      setIsHost={setIsHost}
+      roomCode={roomCode}
+      setRoomCode={setRoomCode} 
+  />
+  /* Main Game */
+  if (screen === 'game') return <Game 
+      setScreen={setScreen} 
+      pitches={pitches}  
+      setSelected={setSelected} 
+      selected={selected}
+      isHost={isHost}
+      roomCode={roomCode}
+  />
 
   return null
 }

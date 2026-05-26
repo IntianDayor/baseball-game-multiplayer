@@ -60,3 +60,33 @@ export async function startGame(roomCode) {
     if(error) console.error('startGame error:', error)
     return data;
 }
+
+// CHOSEN COIN
+export async function coinChoice(roomCode, chosenCoin) {
+    const { data, error } = await supabase
+        .from('rooms')
+        .update({
+            coin_choice: chosenCoin
+        })
+        .select()
+        .eq('id', roomCode)
+        .single()
+
+    if (error) console.error('coinChoice error:', error)
+    return data;    
+}
+
+// COIN TOSS RESULT
+export async function updateCoinTossRes(roomCode, coinRes) {
+    const { data, error } = await supabase
+        .from('rooms')
+        .update({
+            coin_result: coinRes
+        })
+        .select()
+        .eq('id', roomCode)
+        .single()
+
+    if (error) console.error('coinTossRes error:', error)
+    return data;
+}

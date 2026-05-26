@@ -5,17 +5,15 @@ import { joinRoom } from "../lib/rooms";
 import { checkRoomStatus } from "../lib/rooms";
 import { startGame } from "../lib/rooms";
 
-function Lobby({ setScreen }) {
+function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
     // Generates the Room Code
     function generateRandomCode() {
         return Math.random().toString(36).substring(2, 8).toUpperCase();
     }
 
     const [mode, setMode] = useState(null);
-    const [roomCode, setRoomCode] = useState('');
     const [joinInput, setJoinInput] = useState('');
     const [error, setError] = useState('');
-    const [isHost, setIsHost] = useState(false);
     const [playerJoined, setPlayerJoined] = useState(false);
 
     useEffect(() =>{
