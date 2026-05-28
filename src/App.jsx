@@ -1,6 +1,7 @@
 import MainMenu from "./components/MainMenu"
 import Lobby from "./components/Lobby"
 import Game from "./components/Game"
+import Loading from "./components/Loading"
 import { useState, useEffect } from "react"
 import PitchSelector from "./components/PitchSelector"
 import { getGamePitches } from "./data/pitches"
@@ -33,7 +34,7 @@ function App () {
       roomCode={roomCode}
   />
 
-  return null
+  return <Loading />
 }
 
 export default App;

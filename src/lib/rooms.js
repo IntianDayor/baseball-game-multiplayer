@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
 
+// =============== LOBBY =============== //
+
 // ROOM CREATE
 export async function createRoom(roomCode) {
     const { data, error } = await supabase
@@ -12,11 +14,10 @@ export async function createRoom(roomCode) {
         .select()
         .single()
 
-    if (error) console.error('createRoom error:', error)
+    if (error) console.error('createRoom error:', error);
     return data;
     
 }
-
 
 // ROOM JOIN
 export async function joinRoom(roomCode) {
@@ -30,19 +31,7 @@ export async function joinRoom(roomCode) {
         .select()
         .single()
 
-    if (error) console.error('joinRoom error:', error)
-    return data;
-}
-
-// CHECK ROOM STATUS
-export async function checkRoomStatus(roomCode) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .select()
-        .eq('id', roomCode)
-        .single()
-    
-    if (error) console.error('checkRoomStatus error:', error)
+    if (error) console.error('joinRoom error:', error);
     return data;
 }
 
@@ -57,9 +46,11 @@ export async function startGame(roomCode) {
         .eq('id', roomCode)
         .single()
     
-    if(error) console.error('startGame error:', error)
+    if(error) console.error('startGame error:', error);
     return data;
 }
+
+// =============== COIN TOSS MECHANIC =============== //
 
 // CHOSEN COIN
 export async function coinChoice(roomCode, chosenCoin) {
@@ -72,7 +63,7 @@ export async function coinChoice(roomCode, chosenCoin) {
         .eq('id', roomCode)
         .single()
 
-    if (error) console.error('coinChoice error:', error)
+    if (error) console.error('coinChoice error:', error);
     return data;    
 }
 
@@ -87,6 +78,40 @@ export async function updateCoinTossRes(roomCode, coinRes) {
         .eq('id', roomCode)
         .single()
 
-    if (error) console.error('coinTossRes error:', error)
+    if (error) console.error('coinTossRes error:', error);
+    return data;
+}
+
+// =============== ROOM STATS =============== //
+
+// CHECK ROOM STATUS
+export async function checkRoomStatus(roomCode) {
+    const { data, error } = await supabase
+        .from('rooms')
+        .select()
+        .eq('id', roomCode)
+        .single()
+    
+    if (error) console.error('checkRoomStatus error:', error);
+    return data;
+}
+
+// =============== PLAY ORDER - PITCHING OR BATTING =============== //
+
+// UPDATE ROLE
+export async function updatePlayerRole(roomCode, chosenRole, isHost) {
+    const oppposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
+
+    const {data, error} = await supabase
+        .from('rooms')
+        .update({
+            current_role_p1: isHost ? chosenRole : oppposite,
+            current_role_p2: isHost ? oppposite : chosenRole
+        })
+        .select()
+        .eq('id', roomCode)
+        .single()
+
+    if (error) console.error('updatePlayerRole error:', error);
     return data;
 }

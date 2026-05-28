@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
-import PitchingField from "./PitchingField";
-import PitchSelector from "./PitchSelector";
-import { coinChoice, updateCoinTossRes } from "../lib/rooms";
-import { supabase } from "../lib/supabase";
+import { useState, useEffect, use } from "react"
+import PitchingField from "./PitchingField"
+import PitchSelector from "./PitchSelector"
+import Loading from "./Loading"
+import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms"
+import { supabase } from "../lib/supabase"
 
 function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
     // Coin toss Function
@@ -11,12 +12,17 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
         return (coin === 1) ? 'HEADS' : 'TAILS';
     }
 
+    /* VARIABLES */
     const [role, setRole] = useState('choosing');
     const [coinRes, setCoinRes] = useState(() => coinToss());
     const [chosenCoin, setChosenCoin] = useState('');
-    const [mySide, setMySide] = useState('');
+    const [mySide, setMySide] = useState(''); // Coin toss
+    const [tossWinner, setTossWinner] = useState(null);
+    const [roleChosen, setRoleChosen] = useState(''); // Play Order determined by the winner of the coin toss.
+    const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.
 
-    useEffect(() =>{
+    /* STATE LISTENER */
+    useEffect(() => {
         if (!roomCode) return;
 
         const channel = supabase
@@ -28,20 +34,31 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
                 filter: `id=eq.${roomCode}`
             }, (payload) => {
                 const room = payload.new
+                
                 // Coin Toss Result
                 if (room.coin_result) {
                     setCoinRes(room.coin_result);
+                    // Determine Winner of CoinToss
+                    const chooserWon = room.coin_result === room.coin_choice.toUpperCase();
+                    setTossWinner(isHost ? !chooserWon : chooserWon)
                 }
+
                 // Coin Choice of Players
                 if (room.coin_choice) {
                     if (isHost) {
                         setChosenCoin(room.coin_choice);
-                        setMySide(room.coin_choice === 'heads' ? 'TAILS': 'HEADS');
+                        setMySide(room.coin_choice === 'heads' ? 'TAILS' : 'HEADS');
                     }
+                }
+
+                // Play Order
+                if (room.current_role_p1 && room.current_role_p2) {
+                    const myRole = isHost ? room.current_role_p1 : room.current_role_p2;
+                    setRole(myRole);
                 }
             })
             .subscribe()
-        
+
         return () => supabase.removeChannel(channel);
     }, [roomCode]);
 
@@ -63,7 +80,7 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
                     <div className="text-white p-4">You chose: {mySide}</div>
                 ) : (
                     <div className="flex gap-4 p-4 m-4">
-                        <button 
+                        <button
                             onClick={async () => {
                                 setChosenCoin('heads');
                                 setMySide('HEADS')
@@ -87,11 +104,47 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
                         </button>
                     </div>
                 )
-            ) : ( chosenCoin ? (
-                    <div className="text-white p-4">You Got: {mySide}</div>
-                ) : (
-                    <div className="text-white p-4">Waiting for opponent to choose...</div>)
-                )}
+            ) : (chosenCoin ? (
+                <div className="text-white p-4">You Got: {mySide}</div>
+            ) : (
+                <div className="text-white p-4">Waiting for opponent to choose...</div>)
+            )}
+
+            {/* Win/Lose Result */}
+            {tossWinner !== null && (
+                <div className="p-4 m-4 bg-gray-800 rounded-2xl border-2 border-s-gray-300 text-white text-xl font-bold mt-4 text-center"
+                >
+                    {tossWinner ? (
+                        <>
+                            <div>🏆 You Win the Toss! Choose Play Order</div>
+                            <div className="flex gap-4 p-4 m-4">
+                                <button 
+                                className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
+                                onClick={async() => {
+                                    setRoleChosen('pitcher');
+                                    setRole('pitcher');
+                                    await updatePlayerRole(roomCode, 'pitcher', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
+                                }}
+                                >
+                                    Pitcher First
+                                </button>
+                                <button
+                                className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0" 
+                                onClick={async() => {
+                                    setRoleChosen('batter');
+                                    setRole('batter');
+                                    await updatePlayerRole(roomCode, 'batter', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
+                                }}
+                                >
+                                    Batter First
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div>😔 You Lost the Toss! Opponent is Choosing Play Order</div>
+                    )}
+                </div>
+            )}
         </div>
     );
 
@@ -103,13 +156,15 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
         </div>
     );
 
-    /*
+    /* GAME SCREEN - BATTER */
      if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-
+            <h1 className="text-center text-2xl font-extrabold text-white">NO BATTING SCREEN YET</h1>
         </div>
      );
-     */
+
+     /* FAIL SAFE RETURN / LOADING SCREEN */
+     return <Loading />
 }
 
 export default Game;
