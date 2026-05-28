@@ -1,56 +1,78 @@
-# SIMPLE WEBGAME BASEBALL BACK AND FORTH
+# Baseball Game - 2 Player Web Game
 
-## 2 Player Game
-### HTML JAVASCRIPT CSS
-### BaaS (NO BACKEND IF POSSIBLE)
-### STYLYZED ART BY ME KRITA
-### Sound/Music could be outsourced or made by me
+A stylized, turn-based baseball game for two players built with modern web technologies.
 
-## MAIN MENU
+## Overview
 
-⇒ Choose if want to play with random or friend
-	=> Random
-		⇒ Fetch random players also queing
-	=>  Friend
-		⇒ Create a room for friend to join
+**Tech Stack:**
+- Frontend: HTML, JavaScript, React
+- Backend: BaaS (Supabase - no custom backend needed)
+- Art: Krita (custom stylized sprites)
+- Audio: TBD (outsourced or custom)
 
-## GAMEPLAY LOOP
+**Features:** Cross-platform responsive UI (desktop & mobile)
 
- ⇒ Coin Toss Whoever wins
-	=> Chooses First to Pitch or First to Bat
+---
 
-⇒ PITCHING
-=> Player chooses pitch aims using cursor holds mouse to determine throw strength
-=> Player chooses fastball(default Q) and randomized breaking balls (W, E)
+## Main Menu
 
-⇒ BATTING
-	=> Player sees a hint where the ball will hit but not reveal the break/speed/strength
-	=> Player chooses power/contact/bunt (Q,W,E keys) player didnt hit strike if within   strikezone ball if not
- 
-⇒ Whole Game
-	=> loops like baseball game after three outs retires batter with three strikeouts or if outed
-	=> the fielders only visualized at a mini map as circles(colored) and will rng if CAUGHT/FAILED
+Players can choose their match type:
+- **Quick Match** - Find a random opponent from the matchmaking queue
+- **Play With Friend** - Create a room to share with a friend
 
+---
 
-## Responsive UI so can be played both mobile or any viewport
+## Gameplay Loop
 
- StrikeZone ⇒ One box with nine grid boxes that ball will trigger if strike or not
-	=> Strike if strikezone
-	=> Ball if Not
-	=> Strike if swing and miss regardless if the ball is strikezone or not
+### Coin Toss
+- Determines who goes first
+- Winner chooses to either **Pitch** or **Bat** first
 
+### Pitching Phase
+- Player aims the pitch using the cursor
+- Hold mouse to determine throw strength
+- Pitch selection:
+  - **Q** - Fastball (default)
+  - **W** - Breaking ball #1 (randomized)
+  - **E** - Breaking ball #2 (randomized)
 
-## OPTIONAL FEAT:
-	⇒ POWERUP PITCHING / BATTING
-		=> Pitching ⇒
-			=> Impossible to hit Ball of choice will be triggered if certain condition
-		=> Batting ⇒ 
-			=> SURE HOMERUN and HIT will be triggered if certain condition
-	
+### Batting Phase
+- Player sees a visual hint indicating where the ball will land (without revealing speed/break/strength)
+- Batting options:
+  - **Q** - Power swing
+  - **W** - Contact swing
+  - **E** - Bunt
+- Hit result determined by whether swing connects within the strike zone
 
+### Strike Zone
+- 9-grid strike zone box that determines:
+  - **Strike** - Ball lands within strike zone
+  - **Ball** - Ball lands outside strike zone
+  - **Strike** - Any swing and miss (regardless of zone)
 
- # FLOW
+### Game Progression
+- 3 outs per inning retires the batting side
+- 3 strikeouts automatically outs the batter
+- Fielders displayed as colored circles on mini-map
+- Fielder catches/misses determined by RNG
 
+---
+
+## Optional Features
+
+### Power-Ups
+
+**Pitching Power-Up:**
+- Throws an impossible-to-hit ball when triggered under certain conditions
+
+**Batting Power-Up:**
+- Guarantees a home run or hit when triggered under certain conditions
+
+---
+
+## Game Flow
+
+```
 OPEN GAME
    ↓
 MAIN MENU → PLAY
@@ -63,7 +85,7 @@ ROOM CREATED / MATCH FOUND
    ↓
 COIN TOSS
    ↓
-Winner chooses Pitch or Bat
+Winner Chooses Pitch or Bat
    ↓
 INNING LOOP:
    Pitch → Bat → Resolve → Outs
@@ -73,5 +95,6 @@ INNING LOOP:
 Final Inning Complete?
    ├─ No → Next Inning
    └─ Yes → Winner Screen
+```
 
 
