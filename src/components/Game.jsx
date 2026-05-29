@@ -2,11 +2,11 @@ import { useState, useEffect, use } from "react";
 import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
-import Loading from "./Loading"
-import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms"
-import { supabase } from "../lib/supabase"
+import Loading from "./Loading";
+import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import { supabase } from "../lib/supabase";
 
-function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
+function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCode }) {
     /* COIN TOSS FUNCTION */
     function coinToss() {
         const coin = Math.floor(Math.random() * 2);
@@ -158,9 +158,9 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
     /* GAME SCREEN - BATTER */
      if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
-            
+            <BattingField bats={bats} selected={selected} setSelected={setSelected}/>
         </div>
-     );
+     ); 
 
      /* FAIL SAFE RETURN / LOADING SCREEN */
      return <Loading />

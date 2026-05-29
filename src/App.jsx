@@ -6,12 +6,14 @@ import { useState, useEffect } from "react"
 import PitchSelector from "./components/PitchSelector"
 import { getGamePitches } from "./data/pitches"
 import PitchingField from "./components/PitchingField"
+import { getGameBats } from "./data/bats"
 
 function App () {
   /* Variables */
   const [screen, setScreen] = useState('menu');
   const [selected, setSelected] = useState('Q');
   const [pitches] = useState(() => getGamePitches());
+  const [bats] = useState(() => getGameBats());
   const [isHost, setIsHost] = useState(false);
   const [roomCode, setRoomCode] = useState('');
 
@@ -27,7 +29,8 @@ function App () {
   /* Main Game */
   if (screen === 'game') return <Game 
       setScreen={setScreen} 
-      pitches={pitches}  
+      pitches={pitches} 
+      bats={bats}
       setSelected={setSelected} 
       selected={selected}
       isHost={isHost}
