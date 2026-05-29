@@ -4,9 +4,10 @@ import PitchSelector from "./PitchSelector"
 import Loading from "./Loading"
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms"
 import { supabase } from "../lib/supabase"
+import StrikeZone from "./StrikeZone"
 
 function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
-    // Coin toss Function
+    /* COIN TOSS FUNCTION */
     function coinToss() {
         const coin = Math.floor(Math.random() * 2);
         return (coin === 1) ? 'HEADS' : 'TAILS';
@@ -19,7 +20,7 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
     const [mySide, setMySide] = useState(''); // Coin toss
     const [tossWinner, setTossWinner] = useState(null);
     const [roleChosen, setRoleChosen] = useState(''); // Play Order determined by the winner of the coin toss.
-    const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.
+    const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.     
 
     /* STATE LISTENER */
     useEffect(() => {
@@ -122,7 +123,6 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
                                 className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
                                 onClick={async() => {
                                     setRoleChosen('pitcher');
-                                    setRole('pitcher');
                                     await updatePlayerRole(roomCode, 'pitcher', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
                                 }}
                                 >
@@ -132,7 +132,6 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
                                 className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0" 
                                 onClick={async() => {
                                     setRoleChosen('batter');
-                                    setRole('batter');
                                     await updatePlayerRole(roomCode, 'batter', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
                                 }}
                                 >
@@ -150,7 +149,7 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
 
     /* GAME SCREEN - PITCHER */
     if (role === 'pitcher') return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
             <PitchingField pitches={pitches} selected={selected} />
             <PitchSelector pitches={pitches} selected={selected} setSelected={setSelected} />
         </div>
@@ -158,8 +157,8 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
 
     /* GAME SCREEN - BATTER */
      if (role === 'batter') return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
-            <h1 className="text-center text-2xl font-extrabold text-white">NO BATTING SCREEN YET</h1>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
+            <StrikeZone />
         </div>
      );
 
