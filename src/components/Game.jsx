@@ -1,10 +1,10 @@
-import { useState, useEffect, use } from "react"
-import PitchingField from "./PitchingField"
-import PitchSelector from "./PitchSelector"
+import { useState, useEffect, use } from "react";
+import PitchingField from "./PitchingField";
+import PitchSelector from "./PitchSelector";
+import BattingField from "./BattingField";
 import Loading from "./Loading"
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms"
 import { supabase } from "../lib/supabase"
-import StrikeZone from "./StrikeZone"
 
 function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
     /* COIN TOSS FUNCTION */
@@ -158,7 +158,7 @@ function Game({ setScreen, pitches, selected, setSelected, isHost, roomCode }) {
     /* GAME SCREEN - BATTER */
      if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
-            <StrikeZone />
+            
         </div>
      );
 
