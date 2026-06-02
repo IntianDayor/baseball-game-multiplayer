@@ -127,6 +127,7 @@ export async function throwPitch(roomCode, pitchData) {
             aim_y: pitchData.aim_y,
             power: pitchData.power,
             is_strike: pitchData.is_strike,
+            thrown_at: pitchData.thrown_at
         })
         .select()
         .single()

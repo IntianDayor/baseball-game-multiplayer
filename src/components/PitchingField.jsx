@@ -43,7 +43,8 @@ function PitchingField({ pitches, selected, roomCode }) {
                     aim_y: cursorPos.y,
                     power: power,
                     pitch_type: selected,
-                    is_strike: inZone
+                    is_strike: inZone,
+                    thrown_at: new Date().toISOString()
                 });
                 setIsCharging(false);
                 setPower(0);
