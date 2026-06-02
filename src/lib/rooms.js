@@ -115,3 +115,22 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
     if (error) console.error('updatePlayerRole error:', error);
     return data;
 }
+
+// PITCH THROWING
+export async function throwPitch(roomCode, pitchData) {
+    const {data, error} = await supabase
+        .from('pitches')
+        .insert({
+            room_id: roomCode,
+            pitch_type: pitchData.pitch_type,
+            aim_x: pitchData.aim_x,
+            aim_y: pitchData.aim_y,
+            power: pitchData.power,
+            is_strike: pitchData.is_strike,
+        })
+        .select()
+        .single()
+
+    if (error) console.error('throwPitch error:', error)
+    return data;
+}

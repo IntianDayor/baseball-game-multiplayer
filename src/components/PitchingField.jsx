@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import StrikeZone from "./StrikeZone";
+import { throwPitch } from "../lib/rooms";
 
-function PitchingField({ pitches, selected }) {
+function PitchingField({ pitches, selected, roomCode }) {
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0});
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
@@ -18,7 +19,7 @@ function PitchingField({ pitches, selected }) {
     }, [isCharging]);
 
     return (
-        <div className="relative w-96 h-96 bg-green-900 rounded cursor-crosshair"
+        <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
         onMouseMove={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             setCursorPos({
@@ -27,9 +28,9 @@ function PitchingField({ pitches, selected }) {
             });
         }}
             onMouseDown={() => setIsCharging(true)}
-            onMouseUp={() => {
-                const inZone = cursorPos.x > 96 && cursorPos.x < 288 
-                            && cursorPos.y > 96 && cursorPos.y < 288;
+            onMouseUp={async () => {
+                const inZone = cursorPos.x > 64 && cursorPos.x < 192  // Min and Max
+                            && cursorPos.y > 64 && cursorPos.y < 192; // Min and Max
                 setThrown({ 
                     power, 
                     aimX: cursorPos.x, 
@@ -37,7 +38,13 @@ function PitchingField({ pitches, selected }) {
                     isStrike: inZone,
                     pitch: pitches[selected]
                  });
-
+                 await throwPitch(roomCode, { 
+                    aim_x: cursorPos.x,
+                    aim_y: cursorPos.y,
+                    power: power,
+                    pitch_type: selected,
+                    is_strike: inZone
+                });
                 setIsCharging(false);
                 setPower(0);
             }}

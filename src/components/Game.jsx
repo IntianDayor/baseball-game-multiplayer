@@ -2,6 +2,7 @@ import { useState, useEffect, use } from "react";
 import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
+import BattingSelector from "./BattingSelector";
 import Loading from "./Loading";
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
@@ -150,7 +151,11 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     /* GAME SCREEN - PITCHER */
     if (role === 'pitcher') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
-            <PitchingField pitches={pitches} selected={selected} />
+            <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
+            >
+                Pitching
+            </div>
+            <PitchingField pitches={pitches} selected={selected} roomCode={roomCode} />
             <PitchSelector pitches={pitches} selected={selected} setSelected={setSelected} />
         </div>
     );
@@ -158,7 +163,12 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     /* GAME SCREEN - BATTER */
      if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
-            <BattingField bats={bats} selected={selected} setSelected={setSelected}/>
+            <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
+            >
+                Batting
+            </div>
+            <BattingField bats={bats} selected={selected} setSelected={setSelected} pitches={pitches} />
+            <BattingSelector bats={bats} selected={selected} setSelected={setSelected} />
         </div>
      ); 
 
