@@ -1,4 +1,4 @@
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
@@ -167,7 +167,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
             >
                 Batting
             </div>
-            <BattingField bats={bats} selected={selected} setSelected={setSelected} pitches={pitches} />
+            <BattingField bats={bats} selected={selected} setSelected={setSelected} pitches={pitches} roomCode={roomCode} />
             <BattingSelector bats={bats} selected={selected} setSelected={setSelected} />
         </div>
      ); 

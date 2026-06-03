@@ -135,3 +135,19 @@ export async function throwPitch(roomCode, pitchData) {
     if (error) console.error('throwPitch error:', error)
     return data;
 }
+
+// SWING DETECTING
+export async function recordSwing(pitch_id, swingData) {
+    const {data, error} = await supabase
+        .from('pitches')
+        .update({
+            was_swung: true,
+            result: swingData.result
+        })
+        .eq('id', pitch_id)
+        .select()
+        .single()
+    
+    if(error) console.error('recordSwing error:', error)
+    return data;
+}
