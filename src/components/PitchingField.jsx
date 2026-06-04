@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
+import { supabase } from "../lib/supabase";
 
 function PitchingField({ pitches, selected, roomCode }) {
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0});
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
     const [thrown, setThrown] = useState(false);
+    const [pitchResult, setPitchResult] = useState(null);
 
     useEffect(() => {
         if (!isCharging) return;
@@ -17,6 +19,27 @@ function PitchingField({ pitches, selected, roomCode }) {
 
         return () => clearInterval(interval);
     }, [isCharging]);
+
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel =  supabase
+            .channel('swings:' + roomCode)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'swings',
+                filter: `room_id=eq.${roomCode}`
+            }, (payload) => {
+                const swing = payload.new
+                if (swing.result) {
+                    setPitchResult(swing.result)
+                }
+            })
+            .subscribe()
+
+        return () => supabase.removeChannel(channel)
+    },[roomCode]);
 
     return (
         <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
@@ -77,8 +100,19 @@ function PitchingField({ pitches, selected, roomCode }) {
                 ${thrown.isStrike ? 'text-green-400' : 'text-red-400'}`
                     }>
                     {thrown.isStrike ? 'STRIKE ZONE' : 'BALL'} - Power: {Math.round(thrown.power)}%
-                    </div>
-        )}
+            </div>
+            )}
+
+            {/* Temp Pitch Result visual */}
+            {pitchResult && (
+                <div className={`absolute top-9 right-2 text-sm font-bold ${
+                    pitchResult === 'hit' ? 'text-red-400' : 'text-green-400'
+                }`}
+                >
+                    {pitchResult === 'hit' ? 'BATTER HIT!' : 'SWING AND MISS!'}
+                </div>
+            )}
+            
         </div>
     )
 }

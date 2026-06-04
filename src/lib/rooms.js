@@ -136,18 +136,22 @@ export async function throwPitch(roomCode, pitchData) {
     return data;
 }
 
-// SWING DETECTING
-export async function recordSwing(pitch_id, swingData) {
-    const {data, error} = await supabase
-        .from('pitches')
-        .update({
-            was_swung: true,
+// SWING DETECTION
+export async function swingAt(pitchId, roomCode, swingData) {
+    const { data, error } = await supabase
+        .from('swings')
+        .insert({
+            pitch_id: pitchId,
+            room_id: roomCode,
+            swing_x: swingData.swing_x,
+            swing_y: swingData.swing_y,
+            swing_type: swingData.swing_type,
+            swing_at: new Date().toISOString(),
             result: swingData.result
         })
-        .eq('id', pitch_id)
         .select()
         .single()
-    
-    if(error) console.error('recordSwing error:', error)
-    return data;
+
+    if (error) console.error('swingAt error:', error)
+    return data
 }

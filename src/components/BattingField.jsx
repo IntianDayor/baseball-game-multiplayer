@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import StrikeZone from "./StrikeZone";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
-import { recordSwing } from "../lib/rooms";
+import { swingAt } from "../lib/rooms";
 
 function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
     
@@ -59,7 +59,12 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
                     const isHit = distance <= zone;
                     const result = isHit ? 'hit' : 'miss';
                     setSwingResult(result);
-                    await recordSwing(incomingPitch.id, { result });
+                    await swingAt(incomingPitch.id, roomCode, {
+                        swing_x: cursorPos.x,
+                        swing_y: cursorPos.y,
+                        swing_type: selected,
+                        result: result
+                    });
                 }}
         >
             
