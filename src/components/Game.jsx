@@ -3,6 +3,7 @@ import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
+import Lobby from "./Lobby";
 import Loading from "./Loading";
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
@@ -21,9 +22,14 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     const [mySide, setMySide] = useState(''); // Coin toss
     const [tossWinner, setTossWinner] = useState(null);
     const [roleChosen, setRoleChosen] = useState(''); // Play Order determined by the winner of the coin toss.
-    const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.     
+    const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.
+    // Variables for ScoreBoard //
+    const [outs, setOuts] = useState(0);
+    const [strikes, setStrikes] = useState(0);
+    const [balls, setBalls] = useState(0);
+    const [inning, setInning] = useState(1);
 
-    /* STATE LISTENER */
+    /* Coin Toss and Role Assignment */
     useEffect(() => {
         if (!roomCode) return;
 
@@ -36,7 +42,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 filter: `id=eq.${roomCode}`
             }, (payload) => {
                 const room = payload.new
-                
+
                 // Coin Toss Result
                 if (room.coin_result) {
                     setCoinRes(room.coin_result);
@@ -62,6 +68,33 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
             .subscribe()
 
         return () => supabase.removeChannel(channel);
+    }, [roomCode]);
+
+    /* Game State Assignment */
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase
+            .channel('gamestate' + roomCode)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'rooms',
+                filter: `id=eq.${roomCode}`
+            }, (payload) => {
+                const room = payload.new
+                setStrikes(room.strikes);
+                setOuts(room.outs);
+                setBalls(room.balls);
+                setInning(room.inning);
+
+                if (room.inning >= 9) {
+                    setScreen('lobby');
+                }
+            })
+            .subscribe()
+
+        return () => supabase.removeChannel(channel)
     }, [roomCode]);
 
     /* COIN TOSS SCREEN BEFORE GAME */
@@ -120,21 +153,21 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                         <>
                             <div>🏆 You Win the Toss! Choose Play Order</div>
                             <div className="flex gap-4 p-4 m-4">
-                                <button 
-                                className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
-                                onClick={async() => {
-                                    setRoleChosen('pitcher');
-                                    await updatePlayerRole(roomCode, 'pitcher', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
-                                }}
+                                <button
+                                    className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
+                                    onClick={async () => {
+                                        setRoleChosen('pitcher');
+                                        await updatePlayerRole(roomCode, 'pitcher', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
+                                    }}
                                 >
                                     Pitcher First
                                 </button>
                                 <button
-                                className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0" 
-                                onClick={async() => {
-                                    setRoleChosen('batter');
-                                    await updatePlayerRole(roomCode, 'batter', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
-                                }}
+                                    className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
+                                    onClick={async () => {
+                                        setRoleChosen('batter');
+                                        await updatePlayerRole(roomCode, 'batter', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
+                                    }}
                                 >
                                     Batter First
                                 </button>
@@ -150,30 +183,81 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
 
     /* GAME SCREEN - PITCHER */
     if (role === 'pitcher') return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
+        <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
+
+            {/* Score Board */}
+            <div className="absolute bg-gray-700 self-start m-3 p-2 w-50 h-60 rounded-2xl border-4 border-gray-500"
+            >
+                <h1 className="items-center text-center text-white font-extrabold">Score Board</h1>
+                <h2 className="items-center text-center text-white font-extrabold">Inning: {inning}</h2>
+                <h2 className="items-center text-center text-white font-extrabold">{strikes} | {balls}</h2>
+                <h2 className="items-center text-center text-white font-extrabold">Out: {outs}</h2>
+            </div>
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Pitching
             </div>
-            <PitchingField pitches={pitches} selected={selected} roomCode={roomCode} />
-            <PitchSelector pitches={pitches} selected={selected} setSelected={setSelected} />
+
+            <PitchingField
+                pitches={pitches}
+                selected={selected}
+                roomCode={roomCode}
+                outs={outs}
+                balls={balls}
+                strikes={strikes}
+                inning={inning}
+            />
+            <PitchSelector
+                pitches={pitches}
+                selected={selected}
+                setSelected={setSelected}
+            />
+
         </div>
     );
 
     /* GAME SCREEN - BATTER */
-     if (role === 'batter') return (
+    if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
+            
+            {/* Score Board */}
+            <div className="absolute bg-gray-700 self-start m-3 p-2 w-50 h-60 rounded-2xl border-4 border-gray-500"
+            >
+                <h1 className="items-center text-center text-white font-extrabold">Score Board</h1>
+                <h2 className="items-center text-center text-white font-extrabold">Inning: {inning}</h2>
+                <h2 className="items-center text-center text-white font-extrabold">{strikes} | {balls}</h2>
+                <h2 className="items-center text-center text-white font-extrabold">Out: {outs}</h2>
+            </div>
+
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Batting
             </div>
-            <BattingField bats={bats} selected={selected} setSelected={setSelected} pitches={pitches} roomCode={roomCode} />
-            <BattingSelector bats={bats} selected={selected} setSelected={setSelected} />
-        </div>
-     ); 
 
-     /* FAIL SAFE RETURN / LOADING SCREEN */
-     return <Loading />
+            <BattingField
+                bats={bats}
+                selected={selected} 
+                setSelected={setSelected} 
+                pitches={pitches} 
+                roomCode={roomCode}
+                strikes={strikes}
+                balls={balls}
+                outs={outs}
+                inning={inning}
+            />
+            <BattingSelector 
+                bats={bats} 
+                selected={selected} 
+                setSelected={setSelected} 
+            />
+
+        </div>
+    );
+
+    /* FAIL SAFE RETURN / LOADING SCREEN */
+    return (
+        <Loading />
+    );
 }
 
 export default Game;

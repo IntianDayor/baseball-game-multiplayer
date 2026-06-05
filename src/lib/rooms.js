@@ -132,7 +132,7 @@ export async function throwPitch(roomCode, pitchData) {
         .select()
         .single()
 
-    if (error) console.error('throwPitch error:', error)
+    if (error) console.error('throwPitch error:', error);
     return data;
 }
 
@@ -152,6 +152,52 @@ export async function swingAt(pitchId, roomCode, swingData) {
         .select()
         .single()
 
-    if (error) console.error('swingAt error:', error)
+    if (error) console.error('swingAt error:', error);
     return data
+}
+
+// =============== GAME STATE MANAGER =============== //
+
+export async function updateGameState(roomCode, result, isStrike) {
+    // Fetch First Current State:
+    const current = await checkRoomStatus(roomCode);
+
+    let { strikes, balls, outs, inning } = current;
+
+    // Count Manager
+    if (result === 'hit') {
+        strikes = 0;
+        balls = 0;
+    } else if (result === 'swing_miss' || result === 'called_strike') {
+        strikes += 1;
+        if (strikes >= 3) {
+            strikes = 0;
+            balls = 0;
+            outs += 1;
+        }
+    } else if (result === 'ball') {
+        balls += 1;
+        if (balls >= 4) {
+            strikes = 0;
+            balls = 0;
+
+            // TODO: Walk Handler
+        }
+    }
+
+    if (outs >= 3) {
+        inning += 1;
+        outs = 0;
+    }
+
+    // Write to Database
+    const {data, error} = await supabase 
+        .from('rooms')
+        .update({ strikes, balls, outs, inning })
+        .eq('id', roomCode)
+        .select()
+        .single()
+
+    if (error) console.error('updateGameState error:', error);
+    return data;
 }

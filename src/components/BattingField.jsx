@@ -2,15 +2,18 @@ import { useState, useEffect } from "react";
 import StrikeZone from "./StrikeZone";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
-import { swingAt } from "../lib/rooms";
+import { swingAt, updateGameState } from "../lib/rooms";
 
-function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
+function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning }) {
     
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+    const [timeLeft, setTimeLeft] = useState(null);
+    const [pitchTaken, setPitchTaken] = useState(false);
 
+    // Listener
     useEffect(() => {
         if (!roomCode) return;
 
@@ -22,18 +25,45 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
                 table: 'pitches',
                 filter: `room_id=eq.${roomCode}`
             }, (payload) => {
-                const pitch = payload.new
-                const pitchData = pitches[pitch.pitch_type]
-                const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y }) 
-                setIncomingPitch(pitch)
-                setHint(hintResult)
-                console.log('incoming pitch:', pitch)
-                console.log('hint result:', hintResult)
+                const pitch = payload.new;
+                const pitchData = pitches[pitch.pitch_type];
+                const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y }); 
+                setIncomingPitch(pitch);
+                setHint(hintResult);
+                setSwingResult(null);
+                setPitchTaken(false);
             })
             .subscribe()
 
         return () => supabase.removeChannel(channel);
     },[roomCode]);
+
+    // Game State Listener / Timer 
+    useEffect(() => {
+        if (!incomingPitch) return;
+
+        const pitchData = pitches[incomingPitch.pitch_type];
+        const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
+
+        const timer = setTimeout(async () => {
+            setPitchTaken(true); // Timer Expired
+
+            const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
+
+            await swingAt(incomingPitch.id, roomCode, {
+                swing_x: null,
+                swing_y: null,
+                swing_type: null,
+                result: result
+            });
+
+            await updateGameState(roomCode, result, incomingPitch.is_strike)
+
+        }, reactionTime);
+
+        return () => clearTimeout(timer)
+
+    }, [incomingPitch]);
 
     return (
         <div className="relative w-96 h-96 bg-green-900 rounded cursor-crosshair"
@@ -57,7 +87,9 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
                     );
                     const zone = hitZones[selected];
                     const isHit = distance <= zone;
-                    const result = isHit ? 'hit' : 'miss';
+
+                    // After Swing
+                    const result = isHit ? 'hit' : 'swing_miss';
                     setSwingResult(result);
                     await swingAt(incomingPitch.id, roomCode, {
                         swing_x: cursorPos.x,
@@ -65,6 +97,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
                         swing_type: selected,
                         result: result
                     });
+                    await updateGameState(roomCode, result, incomingPitch.is_strike)
                 }}
         >
             
@@ -85,6 +118,11 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode }) {
                     swingResult === 'hit' ? 'text-green-400' : 'text-red-400'
                 }`}>
                     {swingResult === 'hit' ? 'HIT!' : 'MISS!'}
+                </div>
+            )}
+            {pitchTaken && (
+                <div className="absolute top-10 left-2 text-sm font-bold text-blue-400">
+                    {incomingPitch.is_strike ? 'CALLED STRIKE!' : 'BALL!'}
                 </div>
             )}
 

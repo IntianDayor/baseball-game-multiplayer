@@ -3,7 +3,7 @@ import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
-function PitchingField({ pitches, selected, roomCode }) {
+function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inning }) {
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0});
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
@@ -104,14 +104,13 @@ function PitchingField({ pitches, selected, roomCode }) {
             )}
 
             {/* Temp Pitch Result visual */}
-            {pitchResult && (
-                <div className={`absolute top-9 right-2 text-sm font-bold ${
-                    pitchResult === 'hit' ? 'text-red-400' : 'text-green-400'
-                }`}
-                >
-                    {pitchResult === 'hit' ? 'BATTER HIT!' : 'SWING AND MISS!'}
-                </div>
-            )}
+            <div className="absolute top-8 right-4">
+                {pitchResult === 'hit' && <div className="text-red-400">BATTER HIT!</div>}
+                {pitchResult === 'swing_miss' && <div className="text-green-400">SWING AND MISS!</div>}
+                {pitchResult === 'called_strike' && <div className="text-green-400">CALLED STRIKE!</div>}
+                {pitchResult === 'ball' && <div className="text-yellow-400">BALL!</div>}
+            </div>
+
             
         </div>
     )
