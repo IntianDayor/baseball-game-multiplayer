@@ -163,10 +163,39 @@ export async function updateGameState(roomCode, result, isStrike) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
 
+    // Runner Advancement Logic
+    let { runner_first, runner_second, runner_third, score_home, score_away } = current;
+
+    if (result === 'homerun') {
+        // All runner Scores
+        if (runner_third) score_home += 1;
+        if (runner_second) score_home += 1;
+        if (runner_first) score_home += 1;
+        score_home += 1;
+
+        // Reset Runners
+        runner_first = false;
+        runner_second = false;
+        runner_third = false;
+    } else if (result === 'double') {
+        if (runner_third) score_home += 1;
+        if (runner_second) score_home += 1;
+
+        // Update Runners
+        runner_third = runner_first;
+        runner_second = true;
+        runner_first = false;
+    } else if (result === 'single') {
+        if (runner_third) score_home += 1;
+        runner_third = runner_second;
+        runner_second = runner_first
+        runner_first = true;
+    }
+
     let { strikes, balls, outs, inning } = current;
 
     // Count Manager
-    if (result === 'hit') {
+    if (result === 'single' || result === 'double' || result === 'homerun' ) {
         strikes = 0;
         balls = 0;
     } else if (result === 'swing_miss' || result === 'called_strike') {
@@ -184,11 +213,18 @@ export async function updateGameState(roomCode, result, isStrike) {
 
             // TODO: Walk Handler
         }
+    }else if (result === 'out') {
+        outs += 1;
     }
 
+    // Reset after inning
     if (outs >= 3) {
         inning += 1;
         outs = 0;
+        
+        runner_first = false;
+        runner_second = false;
+        runner_third = false;
         
         await swapRoles(roomCode, current.current_role_p1);
     }
@@ -196,7 +232,16 @@ export async function updateGameState(roomCode, result, isStrike) {
     // Write to Database
     const {data, error} = await supabase 
         .from('rooms')
-        .update({ strikes, balls, outs, inning })
+        .update({ 
+            strikes, 
+            balls, 
+            outs, 
+            inning,
+            runner_first,
+            runner_second,
+            runner_third,
+            score_home,
+            score_away })
         .eq('id', roomCode)
         .select()
         .single()
@@ -215,6 +260,9 @@ export async function swapRoles(roomCode, currentRoleP1) {
         .update({
             current_role_p1: newRoleP1,
             current_role_p2: newRoleP2,
+            runner_first: false,
+            runner_second: false,
+            runner_third: false
         })
         .eq('id', roomCode)
         .select()

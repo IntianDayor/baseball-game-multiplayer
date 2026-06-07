@@ -101,6 +101,13 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 setBalls(room.balls);
                 setInning(room.inning);
 
+                // Runners data
+                setRunners({
+                    first: room.runner_first ?? false,
+                    second: room.runner_second ?? false,
+                    third: room.runner_third ?? false
+                });
+
                 if (room.inning >= 9) {
                     setScreen('lobby');
                 }

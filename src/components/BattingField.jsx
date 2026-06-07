@@ -3,9 +3,10 @@ import StrikeZone from "./StrikeZone";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
+import { determineHitType } from "../lib/hit-calculator";
 
 function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning }) {
-    
+
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
@@ -27,7 +28,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             }, (payload) => {
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
-                const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y }); 
+                const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y });
                 setIncomingPitch(pitch);
                 setHint(hintResult);
                 setSwingResult(null);
@@ -36,7 +37,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             .subscribe()
 
         return () => supabase.removeChannel(channel);
-    },[roomCode]);
+    }, [roomCode]);
 
     // Game State Listener / Timer 
     useEffect(() => {
@@ -74,33 +75,38 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     y: e.clientY - rect.top
                 });
             }}
-                onClick={ async () => {
-                    if (!hint) return;
-                    const hitZones = {
-                        Q: 30,
-                        W: 60,
-                        E: 90
-                    }
-                    const distance = Math.sqrt(
-                        Math.pow(cursorPos.x - hint.hint_x, 2) +
-                        Math.pow(cursorPos.y - hint.hint_y, 2)
-                    );
-                    const zone = hitZones[selected];
-                    const isHit = distance <= zone;
+            onClick={async () => {
+                if (!hint) return;
+                const hitZones = {
+                    Q: 30,
+                    W: 60,
+                    E: 90
+                }
+                const distance = Math.sqrt(
+                    Math.pow(cursorPos.x - hint.hint_x, 2) +
+                    Math.pow(cursorPos.y - hint.hint_y, 2)
+                );
+                const zone = hitZones[selected];
+                const isHit = distance <= zone;
 
-                    // After Swing
-                    const result = isHit ? 'hit' : 'swing_miss';
-                    setSwingResult(result);
-                    await swingAt(incomingPitch.id, roomCode, {
-                        swing_x: cursorPos.x,
-                        swing_y: cursorPos.y,
-                        swing_type: selected,
-                        result: result
-                    });
-                    await updateGameState(roomCode, result, incomingPitch.is_strike)
-                }}
+                // Determine hit type
+                const hitType = isHit
+                    ? determineHitType(distance, incomingPitch.power, selected)
+                    : null
+
+                // After Swing
+                const result = isHit ? hitType : 'swing_miss';
+                setSwingResult(result);
+                await swingAt(incomingPitch.id, roomCode, {
+                    swing_x: cursorPos.x,
+                    swing_y: cursorPos.y,
+                    swing_type: selected,
+                    result: result
+                });
+                await updateGameState(roomCode, result, incomingPitch.is_strike)
+            }}
         >
-            
+
             {/* Temp Hint Visual */}
             {hint && (
                 <div
@@ -114,10 +120,13 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
             {/* Temp Bat Visual */}
             {swingResult && (
-                <div className={`absolute top-2 left-2 text-sm font-bold ${
-                    swingResult === 'hit' ? 'text-green-400' : 'text-red-400'
-                }`}>
-                    {swingResult === 'hit' ? 'HIT!' : 'MISS!'}
+                <div className={`absolute top-2 left-2 text-sm font-bold ${['single', 'double', 'homerun'].includes(swingResult) ? 'text-green-400' : 'text-red-400'
+                    }`}>
+                    {swingResult === 'homerun' && 'HOMERUN!'}
+                    {swingResult === 'double' && 'DOUBLE!'}
+                    {swingResult === 'single' && 'SINGLE!'}
+                    {swingResult === 'out' && 'OUT!'}
+                    {swingResult === 'swing_miss' && 'MISS!'}
                 </div>
             )}
             {pitchTaken && (
