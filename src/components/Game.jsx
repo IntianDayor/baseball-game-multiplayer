@@ -109,7 +109,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 });
 
                 // END GAME
-                if (room.inning >= 9) {
+                if (room.inning > 9) {
                     async function endGame() {
                         await gameOver(roomCode)
                         setScreen('gameover')
@@ -210,12 +210,18 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     if (role === 'pitcher') return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
 
-            {/* Scoreboard - left side */}
+            {/* Scoreboard */}
             <div className="absolute left-4 top-4">
-                <ScoreBoard inning={inning} strikes={strikes} balls={balls} outs={outs} />
+                <ScoreBoard
+                    inning={inning}
+                    strikes={strikes}
+                    balls={balls}
+                    outs={outs}
+                    roomCode={roomCode}
+                />
             </div>
 
-            {/* Minimap - right side */}
+            {/* Minimap */}
             <div className="absolute right-4 top-4">
                 <MiniMap runners={runners} />
             </div>
@@ -248,12 +254,18 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
 
-            {/* Scoreboard - left side */}
+            {/* Scoreboard */}
             <div className="absolute left-4 top-4">
-                <ScoreBoard inning={inning} strikes={strikes} balls={balls} outs={outs} />
+                <ScoreBoard
+                    inning={inning}
+                    strikes={strikes}
+                    balls={balls}
+                    outs={outs}
+                    roomCode={roomCode}
+                />
             </div>
 
-            {/* Minimap - right side */}
+            {/* Minimap */}
             <div className="absolute right-4 top-4">
                 <MiniMap runners={runners} />
             </div>
