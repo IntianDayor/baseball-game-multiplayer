@@ -13,8 +13,9 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [timeLeft, setTimeLeft] = useState(null);
     const [pitchTaken, setPitchTaken] = useState(false);
+    const [canSwing, setCanSwing] = useState(false);
 
-    // Listener
+    // Pitch Listener
     useEffect(() => {
         if (!roomCode) return;
 
@@ -33,6 +34,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 setHint(hintResult);
                 setSwingResult(null);
                 setPitchTaken(false);
+                setCanSwing(true);
             })
             .subscribe()
 
@@ -47,6 +49,8 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
         const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
 
         const timer = setTimeout(async () => {
+            
+            setCanSwing(false)
             setPitchTaken(true); // Timer Expired
 
             const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
@@ -76,7 +80,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 });
             }}
             onClick={async () => {
-                if (!hint) return;
+                if (!hint || !canSwing) return;
                 const hitZones = {
                     Q: 30,
                     W: 60,

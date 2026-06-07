@@ -7,7 +7,7 @@ import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
 import Lobby from "./Lobby";
 import Loading from "./Loading";
-import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
 function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCode }) {
@@ -108,8 +108,13 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                     third: room.runner_third ?? false
                 });
 
+                // END GAME
                 if (room.inning >= 9) {
-                    setScreen('lobby');
+                    async function endGame() {
+                        await gameOver(roomCode)
+                        setScreen('gameover')
+                    }
+                    endGame()
                 }
             })
             .subscribe()

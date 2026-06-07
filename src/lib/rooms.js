@@ -50,6 +50,21 @@ export async function startGame(roomCode) {
     return data;
 }
 
+// Game Over
+export async function gameOver(roomCode) {
+    const {data, error} = await supabase
+        .from('rooms')
+        .update({
+            status: 'gameover'
+        })
+        .select()
+        .eq('id', roomCode)
+        .single()
+
+    if (error) console.error('gameOver error:', error);
+    return data;
+}
+
 // =============== COIN TOSS MECHANIC =============== //
 
 // CHOSEN COIN
@@ -211,7 +226,11 @@ export async function updateGameState(roomCode, result, isStrike) {
             strikes = 0;
             balls = 0;
 
-            // TODO: Walk Handler
+            // Walk if there is 4 balls
+            runner_third = runner_second;
+            runner_second = runner_first;
+            runner_first = true;
+            if (runner_third) score_home += 1; // Scores if bases are loaded
         }
     }else if (result === 'out') {
         outs += 1;

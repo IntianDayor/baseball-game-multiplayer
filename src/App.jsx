@@ -2,6 +2,7 @@ import MainMenu from "./components/MainMenu"
 import Lobby from "./components/Lobby"
 import Game from "./components/Game"
 import Loading from "./components/Loading"
+import GameOver from "./components/GameOver"
 import { useState, useEffect } from "react"
 import { getGamePitches } from "./data/pitches"
 import { getGameBats } from "./data/bats"
@@ -34,6 +35,12 @@ function App () {
       isHost={isHost}
       roomCode={roomCode}
   />
+
+  /* Game Over */
+  if (screen === 'gameover') return <GameOver
+      setScreen={setScreen}
+      roomCode={roomCode}
+     />
 
   return <Loading />
 }

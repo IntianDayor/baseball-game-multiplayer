@@ -88,7 +88,8 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                         </div>
                         <button 
                         onClick={async () => await startGame(roomCode)}
-                        className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-40 -translate-y-2 active:translate-y-0 active:border-b-0">
+                        disabled={!playerJoined}
+                        className={`bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 font-bold text-gray-900 text-center w-40 -translate-y-2 active:translate-y-0 active:border-b-0 ${!playerJoined ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
                             Start Game!
                         </button>
                     </>
