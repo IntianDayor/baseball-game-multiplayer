@@ -158,6 +158,7 @@ export async function swingAt(pitchId, roomCode, swingData) {
 
 // =============== GAME STATE MANAGER =============== //
 
+// UPDATING GAME STATE
 export async function updateGameState(roomCode, result, isStrike) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
@@ -188,6 +189,8 @@ export async function updateGameState(roomCode, result, isStrike) {
     if (outs >= 3) {
         inning += 1;
         outs = 0;
+        
+        await swapRoles(roomCode, current.current_role_p1);
     }
 
     // Write to Database
@@ -199,5 +202,24 @@ export async function updateGameState(roomCode, result, isStrike) {
         .single()
 
     if (error) console.error('updateGameState error:', error);
+    return data;
+}
+
+// ROLE SWITCHING
+export async function swapRoles(roomCode, currentRoleP1) {
+    const newRoleP1 = currentRoleP1 === 'pitcher' ? 'batter' : 'pitcher';
+    const newRoleP2 = currentRoleP1 === 'pitcher' ? 'pitcher' : 'batter';
+
+    const { data, error } = await supabase
+        .from('rooms')
+        .update({
+            current_role_p1: newRoleP1,
+            current_role_p2: newRoleP2,
+        })
+        .eq('id', roomCode)
+        .select()
+        .single()
+
+    if (error) console.error('swapRoles error:', error);
     return data;
 }

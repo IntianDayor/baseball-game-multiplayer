@@ -3,6 +3,7 @@ import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
+import ScoreBoard from "./ScoreBoard";
 import Lobby from "./Lobby";
 import Loading from "./Loading";
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
@@ -185,14 +186,13 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     if (role === 'pitcher') return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
 
-            {/* Score Board */}
-            <div className="absolute bg-gray-700 self-start m-3 p-2 w-50 h-60 rounded-2xl border-4 border-gray-500"
-            >
-                <h1 className="items-center text-center text-white font-extrabold">Score Board</h1>
-                <h2 className="items-center text-center text-white font-extrabold">Inning: {inning}</h2>
-                <h2 className="items-center text-center text-white font-extrabold">{strikes} | {balls}</h2>
-                <h2 className="items-center text-center text-white font-extrabold">Out: {outs}</h2>
-            </div>
+            <ScoreBoard 
+                inning={inning} 
+                strikes={strikes} 
+                balls={balls} 
+                outs={outs} 
+            />
+
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Pitching
@@ -220,14 +220,12 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
             
-            {/* Score Board */}
-            <div className="absolute bg-gray-700 self-start m-3 p-2 w-50 h-60 rounded-2xl border-4 border-gray-500"
-            >
-                <h1 className="items-center text-center text-white font-extrabold">Score Board</h1>
-                <h2 className="items-center text-center text-white font-extrabold">Inning: {inning}</h2>
-                <h2 className="items-center text-center text-white font-extrabold">{strikes} | {balls}</h2>
-                <h2 className="items-center text-center text-white font-extrabold">Out: {outs}</h2>
-            </div>
+            <ScoreBoard 
+                inning={inning} 
+                strikes={strikes} 
+                balls={balls} 
+                outs={outs} 
+            />
 
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
