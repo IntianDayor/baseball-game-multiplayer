@@ -4,12 +4,14 @@ import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
+import MiniMap from "./MiniMap";
 import Lobby from "./Lobby";
 import Loading from "./Loading";
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
 function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCode }) {
+
     /* COIN TOSS FUNCTION */
     function coinToss() {
         const coin = Math.floor(Math.random() * 2);
@@ -17,6 +19,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     }
 
     /* VARIABLES */
+
+    // Variables for Game State/Role Assignment //
     const [role, setRole] = useState('choosing');
     const [coinRes, setCoinRes] = useState(() => coinToss());
     const [chosenCoin, setChosenCoin] = useState('');
@@ -24,11 +28,19 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     const [tossWinner, setTossWinner] = useState(null);
     const [roleChosen, setRoleChosen] = useState(''); // Play Order determined by the winner of the coin toss.
     const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.
+
     // Variables for ScoreBoard //
     const [outs, setOuts] = useState(0);
     const [strikes, setStrikes] = useState(0);
     const [balls, setBalls] = useState(0);
     const [inning, setInning] = useState(1);
+
+    // Variables for MainGame //
+    const [runners, setRunners] = useState({
+        first: false,
+        second: false,
+        third: false
+    });
 
     /* Coin Toss and Role Assignment */
     useEffect(() => {
@@ -186,13 +198,17 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     if (role === 'pitcher') return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
 
-            <ScoreBoard 
-                inning={inning} 
-                strikes={strikes} 
-                balls={balls} 
-                outs={outs} 
-            />
+            {/* Scoreboard - left side */}
+            <div className="absolute left-4 top-4">
+                <ScoreBoard inning={inning} strikes={strikes} balls={balls} outs={outs} />
+            </div>
 
+            {/* Minimap - right side */}
+            <div className="absolute right-4 top-4">
+                <MiniMap runners={runners} />
+            </div>
+
+            {/* Current Role */}
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Pitching
@@ -219,14 +235,18 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     /* GAME SCREEN - BATTER */
     if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
-            
-            <ScoreBoard 
-                inning={inning} 
-                strikes={strikes} 
-                balls={balls} 
-                outs={outs} 
-            />
 
+            {/* Scoreboard - left side */}
+            <div className="absolute left-4 top-4">
+                <ScoreBoard inning={inning} strikes={strikes} balls={balls} outs={outs} />
+            </div>
+
+            {/* Minimap - right side */}
+            <div className="absolute right-4 top-4">
+                <MiniMap runners={runners} />
+            </div>
+
+            {/* Current Role */}
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Batting
@@ -234,19 +254,19 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
 
             <BattingField
                 bats={bats}
-                selected={selected} 
-                setSelected={setSelected} 
-                pitches={pitches} 
+                selected={selected}
+                setSelected={setSelected}
+                pitches={pitches}
                 roomCode={roomCode}
                 strikes={strikes}
                 balls={balls}
                 outs={outs}
                 inning={inning}
             />
-            <BattingSelector 
-                bats={bats} 
-                selected={selected} 
-                setSelected={setSelected} 
+            <BattingSelector
+                bats={bats}
+                selected={selected}
+                setSelected={setSelected}
             />
 
         </div>
