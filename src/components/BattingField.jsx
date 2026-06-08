@@ -6,7 +6,7 @@ import { swingAt, updateGameState } from "../lib/rooms";
 import { determineHitType } from "../lib/hit-calculator";
 import { rollFielder } from "../lib/fielder";
 
-function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway }) {
+function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway, isHost }) {
 
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
@@ -50,7 +50,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
         const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
 
         const timer = setTimeout(async () => {
-            
+
             setCanSwing(false)
             setPitchTaken(true); // Timer Expired
 
@@ -63,7 +63,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 result: result
             });
 
-            await updateGameState(roomCode, result, incomingPitch.is_strike)
+            await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
 
         }, reactionTime);
 
@@ -72,7 +72,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
     }, [incomingPitch]);
 
     return (
-        <div className="relative w-96 h-96 bg-green-900 rounded cursor-crosshair"
+        <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
             onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 setCursorPos({
@@ -97,7 +97,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 // Determine hit type
                 const hitType = isHit
                     ? determineHitType(distance, incomingPitch.power, selected)
-                    : null
+                    : null;
 
                 // Roll fielder if it's a hit
                 let finalResult = isHit ? hitType : 'swing_miss'
@@ -105,7 +105,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     const fielderRoll = rollFielder(hitType, selected);
                     finalResult = fielderRoll.result;
                 }
-                
+
                 // After Swing
                 setSwingResult(finalResult);
                 await swingAt(incomingPitch.id, roomCode, {
@@ -114,7 +114,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     swing_type: selected,
                     result: finalResult
                 });
-                await updateGameState(roomCode, finalResult, incomingPitch.is_strike);
+                await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
             }}
         >
 
@@ -150,6 +150,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 < StrikeZone pitches={pitches} selected={selected} />
             </div>
+
         </div>
     );
 }

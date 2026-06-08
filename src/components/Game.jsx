@@ -10,7 +10,7 @@ import Loading from "./Loading";
 import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
-function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCode }) {
+function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCode, setScoreAway, setScoreHome, scoreAway, scoreHome }) {
 
     /* COIN TOSS FUNCTION */
     function coinToss() {
@@ -34,8 +34,6 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     const [strikes, setStrikes] = useState(0);
     const [balls, setBalls] = useState(0);
     const [inning, setInning] = useState(1);
-    const [scoreHome, setScoreHome] = useState(0);
-    const [scoreAway, setScoreAway] = useState(0);
 
     // Variables for MainGame //
     const [runners, setRunners] = useState({
@@ -300,6 +298,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 inning={inning}
                 scoreHome={scoreHome}
                 scoreAway={scoreAway}
+                isHost={isHost}
             />
             <BattingSelector
                 bats={bats}

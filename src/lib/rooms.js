@@ -16,7 +16,7 @@ export async function createRoom(roomCode) {
 
     if (error) console.error('createRoom error:', error);
     return data;
-    
+
 }
 
 // ROOM JOIN
@@ -45,14 +45,14 @@ export async function startGame(roomCode) {
         .select()
         .eq('id', roomCode)
         .single()
-    
-    if(error) console.error('startGame error:', error);
+
+    if (error) console.error('startGame error:', error);
     return data;
 }
 
 // Game Over
 export async function gameOver(roomCode) {
-    const {data, error} = await supabase
+    const { data, error } = await supabase
         .from('rooms')
         .update({
             status: 'gameover'
@@ -79,7 +79,7 @@ export async function coinChoice(roomCode, chosenCoin) {
         .single()
 
     if (error) console.error('coinChoice error:', error);
-    return data;    
+    return data;
 }
 
 // COIN TOSS RESULT
@@ -106,7 +106,7 @@ export async function checkRoomStatus(roomCode) {
         .select()
         .eq('id', roomCode)
         .single()
-    
+
     if (error) console.error('checkRoomStatus error:', error);
     return data;
 }
@@ -117,7 +117,7 @@ export async function checkRoomStatus(roomCode) {
 export async function updatePlayerRole(roomCode, chosenRole, isHost) {
     const oppposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
 
-    const {data, error} = await supabase
+    const { data, error } = await supabase
         .from('rooms')
         .update({
             current_role_p1: isHost ? chosenRole : oppposite,
@@ -133,7 +133,7 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
 
 // PITCH THROWING
 export async function throwPitch(roomCode, pitchData) {
-    const {data, error} = await supabase
+    const { data, error } = await supabase
         .from('pitches')
         .insert({
             room_id: roomCode,
@@ -174,7 +174,7 @@ export async function swingAt(pitchId, roomCode, swingData) {
 // =============== GAME STATE MANAGER =============== //
 
 // UPDATING GAME STATE
-export async function updateGameState(roomCode, result, isStrike) {
+export async function updateGameState(roomCode, result, isStrike, isHost) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
 
@@ -182,35 +182,30 @@ export async function updateGameState(roomCode, result, isStrike) {
     let { runner_first, runner_second, runner_third, score_home, score_away } = current;
 
     if (result === 'homerun') {
-        // All runner Scores
-        if (runner_third) score_home += 1;
-        if (runner_second) score_home += 1;
-        if (runner_first) score_home += 1;
-        score_home += 1;
-
-        // Reset Runners
-        runner_first = false;
-        runner_second = false;
-        runner_third = false;
+        if (runner_third) isHost ? score_home += 1 : score_away += 1
+        if (runner_second) isHost ? score_home += 1 : score_away += 1
+        if (runner_first) isHost ? score_home += 1 : score_away += 1
+        isHost ? score_home += 1 : score_away += 1
+        runner_first = false
+        runner_second = false
+        runner_third = false
     } else if (result === 'double') {
-        if (runner_third) score_home += 1;
-        if (runner_second) score_home += 1;
-
-        // Update Runners
-        runner_third = runner_first;
-        runner_second = true;
-        runner_first = false;
+        if (runner_third) isHost ? score_home += 1 : score_away += 1
+        if (runner_second) isHost ? score_home += 1 : score_away += 1
+        runner_third = runner_first
+        runner_second = true
+        runner_first = false
     } else if (result === 'single') {
-        if (runner_third) score_home += 1;
-        runner_third = runner_second;
+        if (runner_third) isHost ? score_home += 1 : score_away += 1
+        runner_third = runner_second
         runner_second = runner_first
-        runner_first = true;
+        runner_first = true
     }
 
+    // Count Manager
     let { strikes, balls, outs, inning } = current;
 
-    // Count Manager
-    if (result === 'single' || result === 'double' || result === 'homerun' ) {
+    if (result === 'single' || result === 'double' || result === 'homerun') {
         strikes = 0;
         balls = 0;
     } else if (result === 'swing_miss' || result === 'called_strike') {
@@ -230,9 +225,9 @@ export async function updateGameState(roomCode, result, isStrike) {
             runner_third = runner_second;
             runner_second = runner_first;
             runner_first = true;
-            if (runner_third) score_home += 1; // Scores if bases are loaded
+            if (runner_third) isHost ? score_home += 1 : score_away += 1 // Scores if bases are loaded
         }
-    }else if (result === 'out') {
+    } else if (result === 'out') {
         outs += 1;
     }
 
@@ -240,27 +235,28 @@ export async function updateGameState(roomCode, result, isStrike) {
     if (outs >= 3) {
         inning += 1;
         outs = 0;
-        
+
         runner_first = false;
         runner_second = false;
         runner_third = false;
-        
+
         await swapRoles(roomCode, current.current_role_p1);
     }
 
     // Write to Database
-    const {data, error} = await supabase 
+    const { data, error } = await supabase
         .from('rooms')
-        .update({ 
-            strikes, 
-            balls, 
-            outs, 
+        .update({
+            strikes,
+            balls,
+            outs,
             inning,
             runner_first,
             runner_second,
             runner_third,
             score_home,
-            score_away })
+            score_away
+        })
         .eq('id', roomCode)
         .select()
         .single()
