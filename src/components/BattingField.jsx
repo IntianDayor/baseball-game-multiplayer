@@ -4,8 +4,9 @@ import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
 import { determineHitType } from "../lib/hit-calculator";
+import { rollFielder } from "../lib/fielder";
 
-function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning }) {
+function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway }) {
 
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
@@ -98,16 +99,22 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     ? determineHitType(distance, incomingPitch.power, selected)
                     : null
 
+                // Roll fielder if it's a hit
+                let finalResult = isHit ? hitType : 'swing_miss'
+                if (isHit && hitType !== 'out') {
+                    const fielderRoll = rollFielder(hitType, selected);
+                    finalResult = fielderRoll.result;
+                }
+                
                 // After Swing
-                const result = isHit ? hitType : 'swing_miss';
-                setSwingResult(result);
+                setSwingResult(finalResult);
                 await swingAt(incomingPitch.id, roomCode, {
                     swing_x: cursorPos.x,
                     swing_y: cursorPos.y,
                     swing_type: selected,
-                    result: result
+                    result: finalResult
                 });
-                await updateGameState(roomCode, result, incomingPitch.is_strike)
+                await updateGameState(roomCode, finalResult, incomingPitch.is_strike);
             }}
         >
 

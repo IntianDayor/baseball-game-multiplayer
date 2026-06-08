@@ -89,7 +89,9 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                         <button 
                         onClick={async () => await startGame(roomCode)}
                         disabled={!playerJoined}
-                        className={`bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 font-bold text-gray-900 text-center w-40 -translate-y-2 active:translate-y-0 active:border-b-0 ${!playerJoined ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
+                        className={`bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 font-bold text-gray-900 text-center w-40 -translate-y-2 
+                                    ${!playerJoined ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:translate-y-0 active:border-b-0'}`}
+                        >
                             Start Game!
                         </button>
                     </>

@@ -9,7 +9,7 @@ function GameOver({ setScreen, roomCode }) {
                 Back to Menu
             </button>
         </div>
-    )
+    );
 }
 
-export default GameOver
+export default GameOver;

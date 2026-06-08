@@ -3,8 +3,8 @@ import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
-function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inning }) {
-    const [cursorPos, setCursorPos] = useState({ x: 0, y: 0});
+function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway }) {
+    const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
     const [thrown, setThrown] = useState(false);
@@ -23,7 +23,7 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
     useEffect(() => {
         if (!roomCode) return;
 
-        const channel =  supabase
+        const channel = supabase
             .channel('swings:' + roomCode)
             .on('postgres_changes', {
                 event: 'INSERT',
@@ -39,29 +39,29 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
             .subscribe()
 
         return () => supabase.removeChannel(channel)
-    },[roomCode]);
+    }, [roomCode]);
 
     return (
         <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
-        onMouseMove={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            setCursorPos({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top
-            });
-        }}
+            onMouseMove={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setCursorPos({
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                });
+            }}
             onMouseDown={() => setIsCharging(true)}
             onMouseUp={async () => {
                 const inZone = cursorPos.x > 64 && cursorPos.x < 192  // Min and Max
-                            && cursorPos.y > 64 && cursorPos.y < 192; // Min and Max
-                setThrown({ 
-                    power, 
-                    aimX: cursorPos.x, 
+                    && cursorPos.y > 64 && cursorPos.y < 192; // Min and Max
+                setThrown({
+                    power,
+                    aimX: cursorPos.x,
                     aimY: cursorPos.y,
                     isStrike: inZone,
                     pitch: pitches[selected]
-                 });
-                 await throwPitch(roomCode, { 
+                });
+                await throwPitch(roomCode, {
                     aim_x: cursorPos.x,
                     aim_y: cursorPos.y,
                     power: power,
@@ -72,7 +72,7 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 setIsCharging(false);
                 setPower(0);
             }}
-        >   
+        >
             { /* Strike Zone */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 < StrikeZone pitches={pitches} selected={selected} />
@@ -80,38 +80,41 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
 
             {/* Crosshair */}
             <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
-                 style={{
+                style={{
                     left: cursorPos.x - 8,
                     top: cursorPos.y - 8,
-                 }} 
+                }}
             />
 
             {/* Power Bar */}
             <div className="absolute bottom-2 left-2 right-2 h-3 bg-gray-700 rounded">
                 <div
                     className="h-full bg-red-500 rounded transition-all"
-                    style={{ width: `${power}%`}}
+                    style={{ width: `${power}%` }}
                 />
             </div>
 
             {/* Strike Feedback */}
             {thrown && (
-            <div className={`absolute top-2 left-2 text-sm font-bold 
+                <div className={`absolute top-2 left-2 text-sm font-bold 
                 ${thrown.isStrike ? 'text-green-400' : 'text-red-400'}`
-                    }>
+                }>
                     {thrown.isStrike ? 'STRIKE ZONE' : 'BALL'} - Power: {Math.round(thrown.power)}%
-            </div>
+                </div>
             )}
 
             {/* Temp Pitch Result visual */}
             <div className="absolute top-8 right-4">
-                {pitchResult === 'hit' && <div className="text-red-400">BATTER HIT!</div>}
+                {pitchResult === 'homerun' && <div className="text-red-400">HOMERUN!</div>}
+                {pitchResult === 'double' && <div className="text-red-400">DOUBLE!</div>}
+                {pitchResult === 'single' && <div className="text-red-400">SINGLE!</div>}
+                {pitchResult === 'out' && <div className="text-green-400">FIELDER CAUGHT IT!</div>}
                 {pitchResult === 'swing_miss' && <div className="text-green-400">SWING AND MISS!</div>}
                 {pitchResult === 'called_strike' && <div className="text-green-400">CALLED STRIKE!</div>}
                 {pitchResult === 'ball' && <div className="text-yellow-400">BALL!</div>}
             </div>
 
-            
+
         </div>
     )
 }

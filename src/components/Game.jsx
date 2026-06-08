@@ -34,6 +34,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     const [strikes, setStrikes] = useState(0);
     const [balls, setBalls] = useState(0);
     const [inning, setInning] = useState(1);
+    const [scoreHome, setScoreHome] = useState(0);
+    const [scoreAway, setScoreAway] = useState(0);
 
     // Variables for MainGame //
     const [runners, setRunners] = useState({
@@ -96,10 +98,14 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 filter: `id=eq.${roomCode}`
             }, (payload) => {
                 const room = payload.new
+
+                // Data Update
                 setStrikes(room.strikes);
                 setOuts(room.outs);
                 setBalls(room.balls);
                 setInning(room.inning);
+                setScoreHome(room.score_home);
+                setScoreAway(room.score_away);
 
                 // Runners data
                 setRunners({
@@ -217,6 +223,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                     strikes={strikes}
                     balls={balls}
                     outs={outs}
+                    scoreHome={scoreHome}
+                    scoreAway={scoreAway}
                     roomCode={roomCode}
                 />
             </div>
@@ -240,6 +248,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 balls={balls}
                 strikes={strikes}
                 inning={inning}
+                scoreHome={scoreHome}
+                scoreAway={scoreAway}
             />
             <PitchSelector
                 pitches={pitches}
@@ -261,6 +271,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                     strikes={strikes}
                     balls={balls}
                     outs={outs}
+                    scoreHome={scoreHome}
+                    scoreAway={scoreAway}
                     roomCode={roomCode}
                 />
             </div>
@@ -286,6 +298,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 balls={balls}
                 outs={outs}
                 inning={inning}
+                scoreHome={scoreHome}
+                scoreAway={scoreAway}
             />
             <BattingSelector
                 bats={bats}
