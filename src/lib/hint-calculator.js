@@ -8,19 +8,28 @@ export function calculateHint(pitch) {
 
     let finalBreakX = typeof breakX === 'string' ? Math.random() * 40 - 20 : breakX;
     let finalBreakY = typeof breakY === 'string' ? Math.random() * 40 - 20 : breakY;
-    let offsetX, offsetY;
 
-    if (!isChaos) { // SMALL VARIATION FOR NOT CHAOS PITCH
-        offsetX = finalBreakX + Math.random() * 4 - 2;
-        offsetY = finalBreakY + Math.random() * 4 - 2;
-    } else { // BIG VARIATION FOR CHAOS PITCH
-        offsetX = Math.random() * 40 - 20;
-        offsetY = Math.random() * 40 - 20;
+    const amplifiedX = finalBreakX * 8
+    const amplifiedY = finalBreakY * 8
+
+    const breakScale = Math.max(4, (Math.abs(finalBreakX) + Math.abs(finalBreakY)) * 3)
+
+    let offsetX, offsetY
+
+    if (!isChaos) {
+        // Hint is offset by break direction + random variation based on break amount
+        offsetX = amplifiedX + (Math.random() * breakScale - breakScale / 2)
+        offsetY = amplifiedY + (Math.random() * breakScale - breakScale / 2)
+    } else {
+
+        offsetX = Math.random() * 80 - 40
+        offsetY = Math.random() * 80 - 40
     }
 
     return {
         hint_x: pitch.aim_x + offsetX,
-        hint_y: pitch.aim_y + offsetY
+        hint_y: pitch.aim_y + offsetY,
+        breakScale
     }
-    
+
 }

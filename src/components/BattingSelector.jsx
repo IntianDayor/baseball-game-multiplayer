@@ -17,7 +17,7 @@ function BattingSelector ({ bats, selected, setSelected }) {
                     >
                         <div className="text-yellow-400 font-bold">{key}</div>
                         <div className="text-sm">{bat.name}</div>
-                        <div className="text-xs text-gray-400">FEAT: {bat.desc}</div>
+                        <div className="text-xs text-gray-400">{bat.desc}</div>
                     </div>
                 ))}
         </div>

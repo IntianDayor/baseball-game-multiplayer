@@ -7,6 +7,7 @@ import { determineHitType } from "../lib/hit-calculator";
 import { rollFielder } from "../lib/fielder";
 
 function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway, isHost }) {
+    /* VARIABLES */
 
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
@@ -16,7 +17,17 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
     const [pitchTaken, setPitchTaken] = useState(false);
     const [canSwing, setCanSwing] = useState(false);
 
-    // Pitch Listener
+    // Contact Point Visualizer Variables // 
+    const pitchData = incomingPitch ? pitches[incomingPitch.pitch_type] : null
+    const speedModifier = pitchData ? (11 - pitchData.speed) / 10 : 0
+    const breakBonus = hint ? hint.breakScale * 0.5 : 0
+    const hitZones = {
+        Q: Math.round(10 + breakBonus + (10 * speedModifier)),
+        W: Math.round(20 + breakBonus + (10 * speedModifier)),
+        E: Math.round(30 + breakBonus + (10 * speedModifier)),
+    }
+
+    // Pitch Listener / Hint Visualizer
     useEffect(() => {
         if (!roomCode) return;
 
@@ -80,13 +91,11 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     y: e.clientY - rect.top
                 });
             }}
+
+            // Batting Logic //
             onClick={async () => {
                 if (!hint || !canSwing) return;
-                const hitZones = {
-                    Q: 30,
-                    W: 60,
-                    E: 90
-                }
+
                 const distance = Math.sqrt(
                     Math.pow(cursorPos.x - hint.hint_x, 2) +
                     Math.pow(cursorPos.y - hint.hint_y, 2)
@@ -118,13 +127,26 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             }}
         >
 
-            {/* Temp Hint Visual */}
+            {/* Contact point - Testing */}
+            <div
+                className="absolute rounded-full border-2 border-white pointer-events-none opacity-70 transition-all duration-75"
+                style={{
+                    width: `${hitZones[selected] * 2}px`,
+                    height: `${hitZones[selected] * 2}px`,
+                    left: cursorPos.x - hitZones[selected],
+                    top: cursorPos.y - hitZones[selected],
+                }}
+            />
+
+            {/* Hint Area */}
             {hint && (
                 <div
-                    className="absolute w-4 h-4 bg-yellow-400 rounded-full pointer-events-none opacity-50"
+                    className="absolute rounded-full border-2 border-yellow-400 pointer-events-none opacity-40"
                     style={{
-                        left: hint.hint_x - 8,
-                        top: hint.hint_y - 8,
+                        width: `${(hint.breakScale ?? 8) * 4}px`,
+                        height: `${(hint.breakScale ?? 8) * 4}px`,
+                        left: hint.hint_x - ((hint.breakScale ?? 8) * 2),
+                        top: hint.hint_y - ((hint.breakScale ?? 8) * 2),
                     }}
                 />
             )}

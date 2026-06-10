@@ -177,34 +177,48 @@ export async function swingAt(pitchId, roomCode, swingData) {
 export async function updateGameState(roomCode, result, isStrike, isHost) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
+    
+    let { runner_first, 
+        runner_second, 
+        runner_third, 
+        score_home, 
+        score_away, 
+        strikes, 
+        balls, 
+        outs, 
+        inning  
+    } = current;
 
     // Runner Advancement Logic
-    let { runner_first, runner_second, runner_third, score_home, score_away } = current;
-
     if (result === 'homerun') {
-        if (runner_third) isHost ? score_home += 1 : score_away += 1
-        if (runner_second) isHost ? score_home += 1 : score_away += 1
-        if (runner_first) isHost ? score_home += 1 : score_away += 1
-        isHost ? score_home += 1 : score_away += 1
-        runner_first = false
-        runner_second = false
-        runner_third = false
+        if (runner_third) isHost ? score_home += 1 : score_away += 1;
+        if (runner_second) isHost ? score_home += 1 : score_away += 1;
+        if (runner_first) isHost ? score_home += 1 : score_away += 1;
+        isHost ? score_home += 1 : score_away += 1;
+        runner_first = false;
+        runner_second = false;
+        runner_third = false;
     } else if (result === 'double') {
-        if (runner_third) isHost ? score_home += 1 : score_away += 1
-        if (runner_second) isHost ? score_home += 1 : score_away += 1
-        runner_third = runner_first
-        runner_second = true
-        runner_first = false
+        if (runner_third) isHost ? score_home += 1 : score_away += 1;
+        if (runner_second) isHost ? score_home += 1 : score_away += 1;
+        runner_third = runner_first;
+        runner_second = true;
+        runner_first = false;
     } else if (result === 'single') {
-        if (runner_third) isHost ? score_home += 1 : score_away += 1
-        runner_third = runner_second
-        runner_second = runner_first
-        runner_first = true
+        if (runner_third) isHost ? score_home += 1 : score_away += 1;
+        runner_third = runner_second;
+        runner_second = runner_first;
+        runner_first = true;
+    } else if (result === 'sac_bunt') { // Sacrifice bunts always get the batter out but advance runners if there is any in bases.
+        if (runner_third) isHost ? score_home += 1 : score_away += 1;
+        runner_third = runner_second;
+        runner_second = runner_first;
+        runner_first = false;
+
+        outs += 1;
     }
 
     // Count Manager
-    let { strikes, balls, outs, inning } = current;
-
     if (result === 'single' || result === 'double' || result === 'homerun') {
         strikes = 0;
         balls = 0;
@@ -226,6 +240,11 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
             runner_second = runner_first;
             runner_first = true;
             if (runner_third) isHost ? score_home += 1 : score_away += 1 // Scores if bases are loaded
+        }
+    } else if (result === 'foul') {
+        // Strike unless already at 2 strikes
+        if (strikes < 2) {
+            strikes += 1;
         }
     } else if (result === 'out') {
         outs += 1;

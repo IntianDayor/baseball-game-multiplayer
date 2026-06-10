@@ -2,17 +2,17 @@ export const BAT_LIBRARY = {
   power_bat: {
     name: "Power",
     key: "Q",
-    desc: "Less Accurate, More Power"
+    desc: "+ P, - A"
   },
   contact_bat: {
     name: "Contact",
     key: "W",
-    desc: "Less Power, More Accurate"
+    desc: "+ A, - P"
   },
   bunt_bat: {
     name: "Bunt",
     key: "E",
-    desc: "Cannot miss. No Power"
+    desc: "++ A, --P, Out"
   }
 }
 
