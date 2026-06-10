@@ -20,11 +20,11 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
     // Contact Point Visualizer Variables // 
     const pitchData = incomingPitch ? pitches[incomingPitch.pitch_type] : null
     const speedModifier = pitchData ? (11 - pitchData.speed) / 10 : 0
-    const breakBonus = hint ? hint.breakScale * 0.5 : 0
+    const breakBonus = hint ? hint.breakScale * 0.25 : 0
     const hitZones = {
-        Q: Math.round(10 + breakBonus + (10 * speedModifier)),
-        W: Math.round(20 + breakBonus + (10 * speedModifier)),
-        E: Math.round(30 + breakBonus + (10 * speedModifier)),
+        Q: Math.round(10 + (5 * speedModifier)),
+        W: Math.round(20 + (5 * speedModifier)),
+        E: Math.round(30 + (5 * speedModifier)),
     }
 
     // Pitch Listener / Hint Visualizer
@@ -108,9 +108,12 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     ? determineHitType(distance, incomingPitch.power, selected)
                     : null;
 
-                // Roll fielder if it's a hit
+                // Roll fielder if it's a hit and not a foul
                 let finalResult = isHit ? hitType : 'swing_miss'
-                if (isHit && hitType !== 'out') {
+                if (
+                    isHit &&
+                    ['single', 'double', 'homerun'].includes(hitType)
+                ) {
                     const fielderRoll = rollFielder(hitType, selected);
                     finalResult = fielderRoll.result;
                 }
@@ -128,8 +131,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
         >
 
             {/* Contact point - Testing */}
-            <div
-                className="absolute rounded-full border-2 border-white pointer-events-none opacity-70 transition-all duration-75"
+            <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                 style={{
                     width: `${hitZones[selected] * 2}px`,
                     height: `${hitZones[selected] * 2}px`,
@@ -160,6 +162,8 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     {swingResult === 'single' && 'SINGLE!'}
                     {swingResult === 'out' && 'OUT!'}
                     {swingResult === 'swing_miss' && 'MISS!'}
+                    {swingResult === 'foul' && 'FOUL!'}
+                    {swingResult === 'sac_bunt' && 'SACRIFICIAL BUNT!'}
                 </div>
             )}
             {pitchTaken && (
