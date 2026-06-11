@@ -191,10 +191,10 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
 
     // Runner Advancement Logic
     if (result === 'homerun') {
+        isHost ? score_home += 1 : score_away += 1;
         if (runner_third) isHost ? score_home += 1 : score_away += 1;
         if (runner_second) isHost ? score_home += 1 : score_away += 1;
         if (runner_first) isHost ? score_home += 1 : score_away += 1;
-        isHost ? score_home += 1 : score_away += 1;
         runner_first = false;
         runner_second = false;
         runner_third = false;
@@ -236,10 +236,10 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
             balls = 0;
 
             // Walk if there is 4 balls
+            if (runner_third) isHost ? score_home += 1 : score_away += 1 // Scores if bases are loaded
             runner_third = runner_second;
             runner_second = runner_first;
             runner_first = true;
-            if (runner_third) isHost ? score_home += 1 : score_away += 1 // Scores if bases are loaded
         }
     } else if (result === 'foul') {
         // Strike unless already at 2 strikes

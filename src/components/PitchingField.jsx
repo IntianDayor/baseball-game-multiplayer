@@ -4,11 +4,15 @@ import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
 function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway }) {
+    /* VARIABLES */
+
+    // Pitching Logic Variables
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
     const [thrown, setThrown] = useState(false);
     const [pitchResult, setPitchResult] = useState(null);
+    const [hasActivePitch, setHasActivePitch] = useState(false);
 
     useEffect(() => {
         if (!isCharging) return;
@@ -20,6 +24,7 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
         return () => clearInterval(interval);
     }, [isCharging]);
 
+    // Swings Listener
     useEffect(() => {
         if (!roomCode) return;
 
@@ -33,7 +38,9 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
             }, (payload) => {
                 const swing = payload.new
                 if (swing.result) {
-                    setPitchResult(swing.result)
+                    setPitchResult(swing.result);
+                    if (swing.result === 'foul') setThrown(null);
+                    setHasActivePitch(false);
                 }
             })
             .subscribe()
@@ -52,6 +59,9 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
             }}
             onMouseDown={() => setIsCharging(true)}
             onMouseUp={async () => {
+                if (hasActivePitch) return;
+
+                setHasActivePitch(true);
                 const inZone = cursorPos.x > 64 && cursorPos.x < 192  // Min and Max
                     && cursorPos.y > 64 && cursorPos.y < 192; // Min and Max
                 setThrown({

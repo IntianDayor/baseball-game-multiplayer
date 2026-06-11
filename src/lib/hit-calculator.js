@@ -1,4 +1,13 @@
-export function determineHitType(distance, pitchPower, swingType) {
+function getContactQuality(distance, radius) {
+    if (distance > radius) return 'miss';
+    if (distance <= radius * 0.25) return 'perfect';
+    if (distance <= radius * 0.60) return 'good';
+    return 'bad';
+}
+
+export function determineHitType(distance, radius, pitchPower, swingType) {
+
+    const quality = getContactQuality(distance, radius);
 
     const distanceScore = Math.max(0, 100 - (distance * 3));
 
@@ -26,4 +35,14 @@ export function determineHitType(distance, pitchPower, swingType) {
         if (total >= 45) return 'sac_bunt';
         return 'foul';
     }
+}
+
+export function getTimingQuality(timingOffset, pitchSpeed) {
+    const adjusted = timingOffset - (pitchSpeed * 20);
+
+    if (adjusted < -120) return "very_early";
+    if (adjusted < -40) return "early";
+    if (adjusted < 40) return "perfect";
+    if (adjusted < 120) return "late";
+    return "very_late";
 }

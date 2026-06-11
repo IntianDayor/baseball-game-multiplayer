@@ -1,14 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import StrikeZone from "./StrikeZone";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType } from "../lib/hit-calculator";
+import { determineHitType, getTimingQuality } from "../lib/hit-calculator";
 import { rollFielder } from "../lib/fielder";
 
 function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway, isHost }) {
     /* VARIABLES */
-
+    // Batting logic Variables
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
@@ -16,16 +16,10 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
     const [timeLeft, setTimeLeft] = useState(null);
     const [pitchTaken, setPitchTaken] = useState(false);
     const [canSwing, setCanSwing] = useState(false);
+    const [pitchStartTime, setPitchStartTime] = useState(null);
 
     // Contact Point Visualizer Variables // 
-    const pitchData = incomingPitch ? pitches[incomingPitch.pitch_type] : null
-    const speedModifier = pitchData ? (11 - pitchData.speed) / 10 : 0
-    const breakBonus = hint ? hint.breakScale * 0.25 : 0
-    const hitZones = {
-        Q: Math.round(10 + (5 * speedModifier)),
-        W: Math.round(20 + (5 * speedModifier)),
-        E: Math.round(30 + (5 * speedModifier)),
-    }
+    const hitZone = bats[selected].radius;
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -47,6 +41,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 setSwingResult(null);
                 setPitchTaken(false);
                 setCanSwing(true);
+                setPitchStartTime(Date.now());
             })
             .subscribe()
 
@@ -54,13 +49,14 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
     }, [roomCode]);
 
     // Game State Listener / Timer 
+    const timerRef = useRef(null);
     useEffect(() => {
         if (!incomingPitch) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
         const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
 
-        const timer = setTimeout(async () => {
+        timerRef.current = setTimeout(async () => {
 
             setCanSwing(false)
             setPitchTaken(true); // Timer Expired
@@ -78,7 +74,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
         }, reactionTime);
 
-        return () => clearTimeout(timer)
+        return () => clearTimeout(timerRef.current);
 
     }, [incomingPitch]);
 
@@ -94,18 +90,23 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
             // Batting Logic //
             onClick={async () => {
-                if (!hint || !canSwing) return;
+
+                if (!hint || !canSwing || !incomingPitch || !pitchStartTime) return;
+                const swingAtTime = Date.now();
+                setCanSwing(false);
+
+                const timingOffset = swingAtTime - pitchStartTime;
+
+                clearTimeout(timerRef.current);
 
                 const distance = Math.sqrt(
                     Math.pow(cursorPos.x - hint.hint_x, 2) +
                     Math.pow(cursorPos.y - hint.hint_y, 2)
                 );
-                const zone = hitZones[selected];
-                const isHit = distance <= zone;
 
-                // Determine hit type
+                const isHit = distance <= hitZone;
                 const hitType = isHit
-                    ? determineHitType(distance, incomingPitch.power, selected)
+                    ? determineHitType(distance, hitZone, timingOffset, incomingPitch.power, selected)
                     : null;
 
                 // Roll fielder if it's a hit and not a foul
@@ -117,7 +118,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     const fielderRoll = rollFielder(hitType, selected);
                     finalResult = fielderRoll.result;
                 }
-
+                
                 // After Swing
                 setSwingResult(finalResult);
                 await swingAt(incomingPitch.id, roomCode, {
@@ -133,10 +134,10 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             {/* Contact point - Testing */}
             <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                 style={{
-                    width: `${hitZones[selected] * 2}px`,
-                    height: `${hitZones[selected] * 2}px`,
-                    left: cursorPos.x - hitZones[selected],
-                    top: cursorPos.y - hitZones[selected],
+                    width: `${hitZone * 2}px`,
+                    height: `${hitZone * 2}px`,
+                    left: cursorPos.x - hitZone,
+                    top: cursorPos.y - hitZone,
                 }}
             />
 
