@@ -5,7 +5,42 @@ function getContactQuality(distance, radius) {
     return 'bad';
 }
 
-export function determineHitType(distance, radius, pitchPower, swingType) {
+export function getTimingQuality(timingOffset, pitchSpeed) {
+    const adjusted = timingOffset - (pitchSpeed * 20);
+
+    if (adjusted < -120) return "very_early";
+    if (adjusted < -40) return "early";
+    if (adjusted < 40) return "perfect";
+    if (adjusted < 120) return "late";
+    return "very_late";
+}
+
+function applyTimingModifier(baseResult, timingQuality) {
+    const roll = Math.random();
+
+    if (timingQuality === 'perfect') return baseResult;
+
+    if (timingQuality === 'early' || timingQuality === 'late') {
+        if (baseResult === 'homerun') return 'double';
+        if (baseResult === 'double') return roll < 0.40 ? 'foul' : 'single';
+        if (baseResult === 'single') return roll < 0.60 ? 'foul' : 'single';
+
+        return baseResult;  
+    }
+
+    if (timingQuality === 'very_early' || timingQuality === 'very_late') {
+        if (roll < 0.25) return 'swing_miss';
+        if (baseResult === 'homerun') return 'single';
+        if (baseResult === 'double') return 'foul';
+        if (baseResult === 'single') return 'foul';
+
+        return baseResult;
+    }
+    
+    return baseResult;
+}
+
+export function determineHitType(distance, radius, timingOffset, pitchSpeed, pitchPower, swingType) {
 
     const quality = getContactQuality(distance, radius);
 
@@ -15,34 +50,31 @@ export function determineHitType(distance, radius, pitchPower, swingType) {
 
     const total = distanceScore + meatballBonus;
 
+    let timingQuality = getTimingQuality(timingOffset, pitchSpeed);
+    // Debug
+    console.log(timingQuality);
+    let baseResult;
+
     if (swingType === 'Q') { // Power
-        if (total >= 115) return 'homerun';
-        if (total >= 90) return 'double';
-        if (total >= 60) return 'single';
-        if (total >= 40) return 'foul';
-        return 'out';
+        if (total >= 115) baseResult = 'homerun';
+        else if (total >= 90) baseResult = 'double';
+        else if (total >= 60) baseResult = 'single';
+        else if (total >= 40) baseResult = 'foul';
+        else baseResult = 'out';
     }
 
     if (swingType === 'W') { // Contact
-        if (total >= 110) return 'double';
-        if (total >= 70) return 'single';
-        if (total >= 45) return 'foul';
-        return 'out';
+        if (total >= 110) baseResult = 'double';
+        else if (total >= 70) baseResult = 'single';
+        else if (total >= 45) baseResult = 'foul';
+        else baseResult = 'out';
     }
 
     if (swingType === 'E') { // Bunt
-        if (total >= 75) return 'single';
-        if (total >= 45) return 'sac_bunt';
-        return 'foul';
+        if (total >= 75) baseResult = 'single';
+        else if (total >= 45) baseResult = 'sac_bunt';
+        else baseResult = 'foul'
     }
-}
 
-export function getTimingQuality(timingOffset, pitchSpeed) {
-    const adjusted = timingOffset - (pitchSpeed * 20);
-
-    if (adjusted < -120) return "very_early";
-    if (adjusted < -40) return "early";
-    if (adjusted < 40) return "perfect";
-    if (adjusted < 120) return "late";
-    return "very_late";
+    return applyTimingModifier(baseResult, timingQuality);
 }

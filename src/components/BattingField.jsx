@@ -106,9 +106,15 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
                 const isHit = distance <= hitZone;
                 const hitType = isHit
-                    ? determineHitType(distance, hitZone, timingOffset, incomingPitch.power, selected)
+                    ? determineHitType(
+                        distance, 
+                        hitZone, 
+                        timingOffset, 
+                        pitches[incomingPitch.pitch_type].speed, 
+                        incomingPitch.power, selected
+                    )
                     : null;
-
+                    
                 // Roll fielder if it's a hit and not a foul
                 let finalResult = isHit ? hitType : 'swing_miss'
                 if (
