@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import StrikeZone from "./StrikeZone";
+import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
@@ -20,6 +21,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
     // Contact Point Visualizer Variables // 
     const hitZone = bats[selected].radius;
+    const [lastPitchLocation, setLastPitchLocation] = useState(null);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -40,18 +42,23 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 setHint(hintResult);
                 setSwingResult(null);
                 setPitchTaken(false);
-                setCanSwing(true);
-                setPitchStartTime(Date.now());
+
+                // Shows hint first after short delay canSwing is true
+                const readDelay = Math.round((10 - pitchData.speed) * 100 + 200);
+                setTimeout (() => {
+                    setCanSwing(true);
+                    setPitchStartTime(Date.now());
+                }, readDelay);
             })
             .subscribe()
 
         return () => supabase.removeChannel(channel);
     }, [roomCode]);
 
-    // Game State Listener / Timer 
+    // Game State Listener / Auto-take Timer
     const timerRef = useRef(null);
     useEffect(() => {
-        if (!incomingPitch) return;
+        if (!canSwing) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
         const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
@@ -60,6 +67,8 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
             setCanSwing(false)
             setPitchTaken(true); // Timer Expired
+            setHint(null);
+            setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
 
             const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
@@ -76,7 +85,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
         return () => clearTimeout(timerRef.current);
 
-    }, [incomingPitch]);
+    }, [canSwing]);
 
     return (
         <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
@@ -127,6 +136,8 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                 
                 // After Swing
                 setSwingResult(finalResult);
+                setHint(null);
+                setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
                 await swingAt(incomingPitch.id, roomCode, {
                     swing_x: cursorPos.x,
                     swing_y: cursorPos.y,
@@ -150,7 +161,7 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             {/* Hint Area */}
             {hint && (
                 <div
-                    className="absolute rounded-full border-2 border-yellow-400 pointer-events-none opacity-40"
+                    className={`absolute rounded-full border-2 pointer-events-none opacity-40 ${canSwing ? 'border-green-400 opacity-100' : 'border-white'}`}
                     style={{
                         width: `${(hint.breakScale ?? 8) * 4}px`,
                         height: `${(hint.breakScale ?? 8) * 4}px`,
@@ -159,6 +170,9 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
                     }}
                 />
             )}
+
+            {/* Last Pitch location */}
+            <LastPitchVisual location={lastPitchLocation} />
 
             {/* Temp Bat Visual */}
             {swingResult && (

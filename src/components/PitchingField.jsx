@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
+import LastPitchVisual from "./LastPitchVisual";
 
 function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway }) {
     /* VARIABLES */
@@ -10,7 +11,7 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
-    const [thrown, setThrown] = useState(false);
+    const [thrown, setThrown] = useState(null);
     const [pitchResult, setPitchResult] = useState(null);
     const [hasActivePitch, setHasActivePitch] = useState(false);
 
@@ -123,6 +124,18 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 {pitchResult === 'called_strike' && <div className="text-green-400">CALLED STRIKE!</div>}
                 {pitchResult === 'ball' && <div className="text-yellow-400">BALL!</div>}
             </div>
+
+            {/* Last Pitch Visual */}
+            <LastPitchVisual
+                location={
+                    thrown
+                        ? {
+                            x: thrown.aimX,
+                            y: thrown.aimY
+                        }
+                        : null
+                }
+            />
 
 
         </div>
