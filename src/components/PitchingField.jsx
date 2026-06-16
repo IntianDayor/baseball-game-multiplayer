@@ -40,7 +40,6 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 const swing = payload.new
                 if (swing.result) {
                     setPitchResult(swing.result);
-                    if (swing.result === 'foul') setThrown(null);
                     setHasActivePitch(false);
                 }
             })
@@ -60,6 +59,9 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
             }}
             onMouseDown={() => setIsCharging(true)}
             onMouseUp={async () => {
+                
+                setIsCharging(false);
+
                 if (hasActivePitch) return;
 
                 setHasActivePitch(true);
@@ -119,6 +121,7 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 {pitchResult === 'homerun' && <div className="text-red-400">HOMERUN!</div>}
                 {pitchResult === 'double' && <div className="text-red-400">DOUBLE!</div>}
                 {pitchResult === 'single' && <div className="text-red-400">SINGLE!</div>}
+                {pitchResult === 'foul' && <div className="text-yellow-400">FOUL BALL!</div>}
                 {pitchResult === 'out' && <div className="text-green-400">FIELDER CAUGHT IT!</div>}
                 {pitchResult === 'swing_miss' && <div className="text-green-400">SWING AND MISS!</div>}
                 {pitchResult === 'called_strike' && <div className="text-green-400">CALLED STRIKE!</div>}
