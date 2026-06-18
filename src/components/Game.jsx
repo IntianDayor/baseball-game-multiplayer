@@ -34,6 +34,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     const [strikes, setStrikes] = useState(0);
     const [balls, setBalls] = useState(0);
     const [inning, setInning] = useState(1);
+    const [inningFrame, setInningFrame] = useState('top');
 
     // Variables for MainGame //
     const [runners, setRunners] = useState({
@@ -42,7 +43,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
         third: false
     });
 
-    /* Coin Toss and Role Assignment */
+    // Database Listener
     useEffect(() => {
         if (!roomCode) return;
 
@@ -55,6 +56,8 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 filter: `id=eq.${roomCode}`
             }, (payload) => {
                 const room = payload.new
+
+                /* Coin Toss and Role Assignment */
 
                 // Coin Toss Result
                 if (room.coin_result) {
@@ -77,31 +80,15 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                     const myRole = isHost ? room.current_role_p1 : room.current_role_p2;
                     setRole(myRole);
                 }
-            })
-            .subscribe()
 
-        return () => supabase.removeChannel(channel);
-    }, [roomCode]);
-
-    /* Game State Assignment */
-    useEffect(() => {
-        if (!roomCode) return;
-
-        const channel = supabase
-            .channel('gamestate' + roomCode)
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'rooms',
-                filter: `id=eq.${roomCode}`
-            }, (payload) => {
-                const room = payload.new
+                /* Game State Assignment */
 
                 // Data Update
                 setStrikes(room.strikes);
                 setOuts(room.outs);
                 setBalls(room.balls);
                 setInning(room.inning);
+                setInningFrame(room.inning_frame);
                 setScoreHome(room.score_home);
                 setScoreAway(room.score_away);
 
@@ -118,13 +105,14 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                         await gameOver(roomCode)
                         setScreen('gameover')
                     }
-                    endGame()
+                    if (scoreHome > scoreAway || scoreAway > scoreHome) endGame();
                 }
             })
             .subscribe()
 
-        return () => supabase.removeChannel(channel)
+        return () => supabase.removeChannel(channel);
     }, [roomCode]);
+
 
     /* COIN TOSS SCREEN BEFORE GAME */
     if (role === 'choosing') return (
@@ -218,6 +206,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
             <div className="absolute left-4 top-4">
                 <ScoreBoard
                     inning={inning}
+                    inningFrame={inningFrame}
                     strikes={strikes}
                     balls={balls}
                     outs={outs}
@@ -266,6 +255,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
             <div className="absolute left-4 top-4">
                 <ScoreBoard
                     inning={inning}
+                    inningFrame={inningFrame}
                     strikes={strikes}
                     balls={balls}
                     outs={outs}

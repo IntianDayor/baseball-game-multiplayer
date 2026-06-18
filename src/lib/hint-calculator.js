@@ -12,14 +12,19 @@ export function calculateHint(pitch) {
     const amplifiedX = finalBreakX * 8
     const amplifiedY = finalBreakY * 8
 
-    const breakScale = Math.max(4, (Math.abs(finalBreakX) + Math.abs(finalBreakY)) * 3)
+    const jitterRange = Math.max(4, (Math.abs(finalBreakX) + Math.abs(finalBreakY)) * 3)
+    
+    const MAX_HINT_RADIUS = 20;
+    const hintRadius = isChaos
+        ? MAX_HINT_RADIUS
+        : Math.min(jitterRange, MAX_HINT_RADIUS);
 
     let offsetX, offsetY
 
     if (!isChaos) {
         // Hint is offset by break direction + random variation based on break amount
-        offsetX = amplifiedX + (Math.random() * breakScale - breakScale / 2)
-        offsetY = amplifiedY + (Math.random() * breakScale - breakScale / 2)
+        offsetX = amplifiedX + (Math.random() * jitterRange - jitterRange / 2)
+        offsetY = amplifiedY + (Math.random() * jitterRange - jitterRange / 2)
     } else {
 
         offsetX = Math.random() * 80 - 40
@@ -29,7 +34,7 @@ export function calculateHint(pitch) {
     return {
         hint_x: pitch.aim_x + offsetX,
         hint_y: pitch.aim_y + offsetY,
-        breakScale
+        breakScale: hintRadius
     }
 
 }

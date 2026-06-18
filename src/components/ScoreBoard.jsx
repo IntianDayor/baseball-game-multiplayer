@@ -1,3 +1,5 @@
+import { formatInning } from "../lib/innings";
+
 /* Counter UI */
 function CountIndicator({ count, max, activeColor }) {
     return (
@@ -14,11 +16,11 @@ function CountIndicator({ count, max, activeColor }) {
     );
 }
 
-function ScoreBoard({ inning, strikes, balls, outs, scoreAway, scoreHome, roomCode }) {
+function ScoreBoard({ inning, inningFrame, strikes, balls, outs, scoreAway, scoreHome, roomCode }) {
     return (
         <div className="bg-gray-900 p-3 rounded-xl border-2 border-gray-600 text-white text-sm w-36">
             <div className="text-yellow-400 font-bold text-center mb-2">
-                INNING {inning}
+                {formatInning(inning, inningFrame)}
             </div>
 
             <div className="flex justify-between border-b border-gray-600 pb-1 mb-1">

@@ -51,8 +51,7 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
     const total = distanceScore + meatballBonus;
 
     let timingQuality = getTimingQuality(timingOffset, pitchSpeed);
-    // Debug
-    console.log(timingQuality);
+
     let baseResult;
 
     if (swingType === 'Q') { // Power

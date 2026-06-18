@@ -41,6 +41,7 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 if (swing.result) {
                     setPitchResult(swing.result);
                     setHasActivePitch(false);
+                    setThrown(null);
                 }
             })
             .subscribe()

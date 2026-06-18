@@ -114,7 +114,10 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
             <h3 className="text-white font-bold p-4 text-2xl">Enter Room Code</h3>
             <div className="flex items-center gap-1 translate-x-10">
                 <input
-                    onChange={(e) => setJoinInput(e.target.value)}
+                    onChange={(e) => {
+                        setJoinInput(e.target.value),
+                        setError(null)
+                    }}
                     value={joinInput}
                     className=" rounded-xl uppercase text-gray-900 font-bold p-4 text-2xl text-center bg-white"
                     type="text"
@@ -122,6 +125,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                     required />
                 <button
                     onClick={async () => {
+                        setError('');
                         const result = await joinRoom(joinInput);
                         if (!result) {
                             setError('Room not found!');
@@ -136,6 +140,12 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                     Join!
                 </button>
             </div>
+            {error && (
+                <div className="absolute p-2 m-2 bottom-50 font-extrabold text-red-600"
+                >
+                    {error}
+                </div>
+            )}
             <button
                 onClick={() => setScreen('menu')}
                 className="absolute top-5 right-5 p-4 m-4 rounded-xl bg-red-800 text-gray-100 hover:text-white hover:cursor-pointer text-sm"

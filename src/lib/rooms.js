@@ -186,7 +186,8 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         strikes, 
         balls, 
         outs, 
-        inning  
+        inning,
+        inning_frame  
     } = current;
 
     // Runner Advancement Logic
@@ -214,8 +215,6 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         runner_third = runner_second;
         runner_second = runner_first;
         runner_first = false;
-
-        outs += 1;
     }
 
     // Count Manager
@@ -246,13 +245,21 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         if (strikes < 2) {
             strikes += 1;
         }
-    } else if (result === 'out') {
+    } else if (result === 'out' || result === 'sac_bunt') {
         outs += 1;
+        strikes = 0;
+        balls = 0;
     }
 
-    // Reset after inning
+    // Reset after an inning frame
     if (outs >= 3) {
-        inning += 1;
+
+        // Determines inning frame and how to proceed
+        if (inning_frame === 'bottom') {
+            inning += 1;
+            inning_frame= 'top';
+        } else inning_frame= 'bottom';
+
         outs = 0;
 
         runner_first = false;
@@ -270,6 +277,7 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
             balls,
             outs,
             inning,
+            inning_frame,
             runner_first,
             runner_second,
             runner_third,
