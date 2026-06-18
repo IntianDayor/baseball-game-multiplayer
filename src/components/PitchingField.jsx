@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
@@ -14,7 +14,9 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
     const [thrown, setThrown] = useState(null);
     const [pitchResult, setPitchResult] = useState(null);
     const [hasActivePitch, setHasActivePitch] = useState(false);
+    const [lastPitchMarker, setLastPitchMarker] = useState(null);
 
+    // Power Charging
     useEffect(() => {
         if (!isCharging) return;
 
@@ -24,6 +26,12 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
 
         return () => clearInterval(interval);
     }, [isCharging]);
+
+    // Latest Thrown Value
+    const thrownRef = useRef(null);
+    useEffect(() => {
+        thrownRef.current = thrown;
+    }, [thrown]);
 
     // Swings Listener
     useEffect(() => {
@@ -41,6 +49,8 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 if (swing.result) {
                     setPitchResult(swing.result);
                     setHasActivePitch(false);
+
+                    if (thrownRef.current) setLastPitchMarker(thrownRef.current);
                     setThrown(null);
                 }
             })
@@ -68,6 +78,8 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                 setHasActivePitch(true);
                 const inZone = cursorPos.x > 64 && cursorPos.x < 192  // Min and Max
                     && cursorPos.y > 64 && cursorPos.y < 192; // Min and Max
+                
+                setLastPitchMarker(null);
                 setThrown({
                     power,
                     aimX: cursorPos.x,
@@ -83,7 +95,6 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
                     is_strike: inZone,
                     thrown_at: new Date().toISOString()
                 });
-                setIsCharging(false);
                 setPower(0);
             }}
         >
@@ -132,10 +143,10 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
             {/* Last Pitch Visual */}
             <LastPitchVisual
                 location={
-                    thrown
+                    lastPitchMarker
                         ? {
-                            x: thrown.aimX,
-                            y: thrown.aimY
+                            x: lastPitchMarker.aimX,
+                            y: lastPitchMarker.aimY
                         }
                         : null
                 }
