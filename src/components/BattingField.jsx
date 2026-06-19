@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
-import { calculateHint } from "../lib/hint-calculator";
+import { calculateHint } from "../lib/engines/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType } from "../lib/hit-calculator";
-import { rollFielder } from "../lib/fielder";
+import { determineHitType } from "../lib/engines/hit-calculator";
+import { rollFielder } from "../lib/engines/fielder";
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     /* VARIABLES */

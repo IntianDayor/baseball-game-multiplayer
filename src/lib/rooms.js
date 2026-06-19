@@ -1,5 +1,9 @@
 import { supabase } from './supabase'
 import { getGamePitches } from '../data/pitches';
+import { applyCountEngine } from './engines/counts';
+import { applyInningEngine } from './engines/innings';
+import { applyRunnerEngine } from './engines/runners';
+import { applyWalkEngine } from './engines/walks';
 
 // =============== LOBBY =============== //
 
@@ -181,119 +185,51 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
 
-    let { runner_first,
-        runner_second,
-        runner_third,
-        score_home,
-        score_away,
-        strikes,
-        balls,
-        outs,
-        inning,
-        inning_frame
-    } = current;
-
-    // Runner Advancement Logic
-    // TODO: found bug, when ball there is third base runner not runner second and first, 
-    // still scores needs to advance walked to empty base first
-    if (result === 'homerun') {
-        isHost ? score_home += 1 : score_away += 1;
-        if (runner_third) isHost ? score_home += 1 : score_away += 1;
-        if (runner_second) isHost ? score_home += 1 : score_away += 1;
-        if (runner_first) isHost ? score_home += 1 : score_away += 1;
-        runner_first = false;
-        runner_second = false;
-        runner_third = false;
-    } else if (result === 'double') {
-        if (runner_third) isHost ? score_home += 1 : score_away += 1;
-        if (runner_second) isHost ? score_home += 1 : score_away += 1;
-        runner_third = runner_first;
-        runner_second = true;
-        runner_first = false;
-    } else if (result === 'single') {
-        if (runner_third) isHost ? score_home += 1 : score_away += 1;
-        runner_third = runner_second;
-        runner_second = runner_first;
-        runner_first = true;
-    } else if (result === 'sac_bunt') { // Sacrifice bunts always get the batter out but advance runners if there is any in bases.
-        if (runner_third) isHost ? score_home += 1 : score_away += 1;
-        runner_third = runner_second;
-        runner_second = runner_first;
-        runner_first = false;
-    }
-
     // Count Manager
-    if (result === 'single' || result === 'double' || result === 'homerun') {
-        strikes = 0;
-        balls = 0;
-    } else if (result === 'swing_miss' || result === 'called_strike') {
-        strikes += 1;
-        if (strikes >= 3) {
-            strikes = 0;
-            balls = 0;
-            outs += 1;
-        }
-    } else if (result === 'ball') {
-        balls += 1;
-        if (balls >= 4) {
-            strikes = 0;
-            balls = 0;
+    let state = {
+        ...current,
+        ...applyCountEngine(current, result)
+    };
 
-            // Walk if there is 4 balls
-            if (runner_third) isHost ? score_home += 1 : score_away += 1 // Scores if bases are loaded
-            runner_third = runner_second;
-            runner_second = runner_first;
-            runner_first = true;
-        }
-    } else if (result === 'foul') {
-        // Strike unless already at 2 strikes
-        if (strikes < 2) {
-            strikes += 1;
-        }
-    } else if (result === 'out' || result === 'sac_bunt') {
-        outs += 1;
-        strikes = 0;
-        balls = 0;
+    // Walk Mechanic Manager
+    const walk = applyWalkEngine(state, result);
+    state = walk.state;
+    result = walk.result;
+
+    // Runner Advancement Manager
+    state = {
+        ...state,
+        ...applyRunnerEngine(state, result, isHost)
+    };
+
+    // Inning / Inning Frame Manager
+    const inning = applyInningEngine(state);
+    state = inning.state;
+
+    if (inning.swapped) {
+        await swapRoles(roomCode, state.current_role_p1);
     }
 
-    // Reset after an inning frame
-    if (outs >= 3) {
-
-        // Determines inning frame and how to proceed
-        if (inning_frame === 'bottom') {
-            inning += 1;
-            inning_frame = 'top';
-        } else inning_frame = 'bottom';
-
-        outs = 0;
-
-        runner_first = false;
-        runner_second = false;
-        runner_third = false;
-
-        await swapRoles(roomCode, current.current_role_p1);
-    }
-
-    // Write to Database
     const { data, error } = await supabase
         .from('rooms')
         .update({
-            strikes,
-            balls,
-            outs,
-            inning,
-            inning_frame,
-            runner_first,
-            runner_second,
-            runner_third,
-            score_home,
-            score_away
+            strikes: state.strikes,
+            balls: state.balls,
+            outs: state.outs,
+            inning: state.inning,
+            inning_frame: state.inning_frame,
+            runner_first: state.runner_first,
+            runner_second: state.runner_second,
+            runner_third: state.runner_third,
+            score_home: state.score_home,
+            score_away: state.score_away
         })
         .eq('id', roomCode)
         .select()
-        .single()
+        .single();
 
-    if (error) console.error('updateGameState error:', error);
+    if (error) console.error("updateGameState error:", error);
+
     return data;
 }
 
