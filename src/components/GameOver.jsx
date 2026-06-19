@@ -1,6 +1,4 @@
-import { useState } from "react";
-
-function GameOver({ setScreen, roomCode, scoreHome, scoreAway, isHost }) {
+function GameOver({ setScreen, scoreHome, scoreAway }) {
 
     const gameWinner = 
         scoreHome > scoreAway

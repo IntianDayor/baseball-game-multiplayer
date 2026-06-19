@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { getGamePitches } from '../data/pitches';
 
 // =============== LOBBY =============== //
 
@@ -10,6 +11,8 @@ export async function createRoom(roomCode) {
             id: roomCode,
             status: 'waiting',
             player1_id: roomCode + '_p1',
+            pitch_set_p1: getGamePitches(),
+            pitch_set_p2: getGamePitches(),
         })
         .select()
         .single()
@@ -177,20 +180,22 @@ export async function swingAt(pitchId, roomCode, swingData) {
 export async function updateGameState(roomCode, result, isStrike, isHost) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
-    
-    let { runner_first, 
-        runner_second, 
-        runner_third, 
-        score_home, 
-        score_away, 
-        strikes, 
-        balls, 
-        outs, 
+
+    let { runner_first,
+        runner_second,
+        runner_third,
+        score_home,
+        score_away,
+        strikes,
+        balls,
+        outs,
         inning,
-        inning_frame  
+        inning_frame
     } = current;
 
     // Runner Advancement Logic
+    // TODO: found bug, when ball there is third base runner not runner second and first, 
+    // still scores needs to advance walked to empty base first
     if (result === 'homerun') {
         isHost ? score_home += 1 : score_away += 1;
         if (runner_third) isHost ? score_home += 1 : score_away += 1;
@@ -257,8 +262,8 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         // Determines inning frame and how to proceed
         if (inning_frame === 'bottom') {
             inning += 1;
-            inning_frame= 'top';
-        } else inning_frame= 'bottom';
+            inning_frame = 'top';
+        } else inning_frame = 'bottom';
 
         outs = 0;
 

@@ -4,7 +4,6 @@ export function calculateHint(pitch) {
     const breakX = pitch.breakX;
     const breakY = pitch.breakY;
     const isChaos = pitch.chaos;
-    const isDisguised = pitch.disguised;
 
     let finalBreakX = typeof breakX === 'string' ? Math.random() * 40 - 20 : breakX;
     let finalBreakY = typeof breakY === 'string' ? Math.random() * 40 - 20 : breakY;

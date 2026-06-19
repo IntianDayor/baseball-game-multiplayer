@@ -1,9 +1,4 @@
-import { useState, useEffect } from "react";
-
-function MainMenu({ screen, setScreen }) {
-
-
-
+function MainMenu({ setScreen }) {
     // pwr button = Play with Random
     // pwf button = Play with Friend 
     return (

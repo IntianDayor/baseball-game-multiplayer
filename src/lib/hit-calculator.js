@@ -75,5 +75,13 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
         else baseResult = 'foul'
     }
 
+    if (quality === 'bad') {
+        if (baseResult === 'homerun') baseResult = 'single';
+    }
+    
+    if (quality === 'good') {
+        if (baseResult === 'homerun') baseResult = 'double';
+    }
+
     return applyTimingModifier(baseResult, timingQuality);
 }

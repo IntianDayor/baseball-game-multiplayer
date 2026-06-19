@@ -1,6 +1,6 @@
 import { supabase } from "../lib/supabase";
 import { useState, useEffect } from "react";
-import { createRoom, joinRoom, checkRoomStatus, startGame } from "../lib/rooms";
+import { createRoom, joinRoom, startGame } from "../lib/rooms";
 
 function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
     // Generates the Room Code
@@ -35,7 +35,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
             .subscribe()
 
         return () => supabase.removeChannel(channel);
-    }, [roomCode]);
+    }, [roomCode, setScreen]);
 
     /* MAIN LOBBY */
     if (!mode) return (

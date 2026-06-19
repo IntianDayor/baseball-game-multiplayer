@@ -5,12 +5,26 @@ import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
-import Lobby from "./Lobby";
 import Loading from "./Loading";
 import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
-function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCode, setScoreAway, setScoreHome, scoreAway, scoreHome }) {
+function Game({
+    setScreen,
+    bats,
+    myPitches,
+    setMyPitches,
+    opponentPitches,
+    setOpponentPitches,
+    selected,
+    setSelected,
+    isHost,
+    roomCode,
+    setScoreAway,
+    setScoreHome,
+    scoreAway,
+    scoreHome
+}) {
 
     /* COIN TOSS FUNCTION */
     function coinToss() {
@@ -26,8 +40,6 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
     const [chosenCoin, setChosenCoin] = useState('');
     const [mySide, setMySide] = useState(''); // Coin toss
     const [tossWinner, setTossWinner] = useState(null);
-    const [roleChosen, setRoleChosen] = useState(''); // Play Order determined by the winner of the coin toss.
-    const [opponentRole, setOpponentRole] = useState(''); // Always the opposite of the Winner Role.
 
     // Variables for ScoreBoard //
     const [outs, setOuts] = useState(0);
@@ -57,7 +69,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
             }, (payload) => {
                 const room = payload.new
 
-                /* Coin Toss and Role Assignment */
+                /* Role Assignment & Pitch Assignment */
 
                 // Coin Toss Result
                 if (room.coin_result) {
@@ -79,6 +91,18 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 if (room.current_role_p1 && room.current_role_p2) {
                     const myRole = isHost ? room.current_role_p1 : room.current_role_p2;
                     setRole(myRole);
+                }
+
+                // Pitch Set Assignment
+                const hostPitches = room.pitch_set_p1;
+                const guestPitches = room.pitch_set_p2;
+
+                if (isHost) {
+                    setMyPitches(hostPitches ?? null);
+                    setOpponentPitches(guestPitches ?? null);
+                } else {
+                    setMyPitches(guestPitches ?? null);
+                    setOpponentPitches(hostPitches ?? null);
                 }
 
                 /* Game State Assignment */
@@ -105,13 +129,29 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                         await gameOver(roomCode)
                         setScreen('gameover')
                     }
-                    if (scoreHome > scoreAway || scoreAway > scoreHome) endGame();
+                    if (room.score_home > room.score_away || room.score_away > room.score_home) endGame();
                 }
             })
             .subscribe()
 
         return () => supabase.removeChannel(channel);
-    }, [roomCode]);
+    }, [
+        roomCode,
+        isHost,
+        scoreHome,
+        scoreAway,
+        setMyPitches,
+        setOpponentPitches,
+        setStrikes,
+        setOuts,
+        setBalls,
+        setInning,
+        setInningFrame,
+        setScoreHome,
+        setScoreAway,
+        setRunners,
+        setScreen
+    ]);
 
 
     /* COIN TOSS SCREEN BEFORE GAME */
@@ -173,7 +213,6 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                                 <button
                                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
                                     onClick={async () => {
-                                        setRoleChosen('pitcher');
                                         await updatePlayerRole(roomCode, 'pitcher', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
                                     }}
                                 >
@@ -182,7 +221,6 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                                 <button
                                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
                                     onClick={async () => {
-                                        setRoleChosen('batter');
                                         await updatePlayerRole(roomCode, 'batter', isHost) // Checks Roomcode, Determines role, Checks if Player 1 or 2
                                     }}
                                 >
@@ -228,7 +266,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
             </div>
 
             <PitchingField
-                pitches={pitches}
+                pitches={myPitches}
                 selected={selected}
                 roomCode={roomCode}
                 outs={outs}
@@ -239,7 +277,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 scoreAway={scoreAway}
             />
             <PitchSelector
-                pitches={pitches}
+                pitches={myPitches}
                 selected={selected}
                 setSelected={setSelected}
             />
@@ -280,7 +318,7 @@ function Game({ setScreen, bats, pitches, selected, setSelected, isHost, roomCod
                 bats={bats}
                 selected={selected}
                 setSelected={setSelected}
-                pitches={pitches}
+                pitches={opponentPitches}
                 roomCode={roomCode}
                 strikes={strikes}
                 balls={balls}

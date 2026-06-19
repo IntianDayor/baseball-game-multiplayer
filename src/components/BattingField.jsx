@@ -4,17 +4,16 @@ import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType, getTimingQuality } from "../lib/hit-calculator";
+import { determineHitType } from "../lib/hit-calculator";
 import { rollFielder } from "../lib/fielder";
 
-function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway, isHost }) {
+function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     /* VARIABLES */
     // Batting logic Variables
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
-    const [timeLeft, setTimeLeft] = useState(null);
     const [pitchTaken, setPitchTaken] = useState(false);
     const [canSwing, setCanSwing] = useState(false);
     const [pitchStartTime, setPitchStartTime] = useState(null);
@@ -53,12 +52,12 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
             .subscribe()
 
         return () => supabase.removeChannel(channel);
-    }, [roomCode]);
+    }, [roomCode, pitches]);
 
     // Game State Listener / Auto-take Timer
     const timerRef = useRef(null);
     useEffect(() => {
-        if (!canSwing) return;
+        if (!canSwing || !incomingPitch) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
         const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
@@ -85,7 +84,9 @@ function BattingField({ pitches, bats, selected, setSelected, roomCode, strikes,
 
         return () => clearTimeout(timerRef.current);
 
-    }, [canSwing]);
+    }, [canSwing, incomingPitch, isHost, pitches, roomCode]);
+
+    if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
     return (
         <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"

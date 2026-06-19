@@ -4,7 +4,7 @@ import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
 
-function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inning, scoreHome, scoreAway }) {
+function PitchingField({ pitches, selected, roomCode }) {
     /* VARIABLES */
 
     // Pitching Logic Variables
@@ -58,6 +58,8 @@ function PitchingField({ pitches, selected, roomCode, strikes, balls, outs, inni
 
         return () => supabase.removeChannel(channel)
     }, [roomCode]);
+
+    if (!pitches) return <div>Loading pitches...</div>;
 
     return (
         <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
