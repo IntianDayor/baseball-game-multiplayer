@@ -8,26 +8,28 @@ export function calculateHint(pitch) {
     let finalBreakX = typeof breakX === 'string' ? Math.random() * 40 - 20 : breakX;
     let finalBreakY = typeof breakY === 'string' ? Math.random() * 40 - 20 : breakY;
 
-    const amplifiedX = finalBreakX * 8
-    const amplifiedY = finalBreakY * 8
+    const amplifiedX = finalBreakX * 8;
+    const amplifiedY = finalBreakY * 8;
 
-    const jitterRange = Math.max(4, (Math.abs(finalBreakX) + Math.abs(finalBreakY)) * 3)
+    const jitterRange = Math.max(4, (Math.abs(finalBreakX) + Math.abs(finalBreakY)) * 3);
+    const chaosJitterRange = 80;
     
     const MAX_HINT_RADIUS = 20;
+    const MAX_CHAOS_HINT_RADIUS = 35;
     const hintRadius = isChaos
-        ? MAX_HINT_RADIUS
+        ? Math.min(chaosJitterRange, MAX_CHAOS_HINT_RADIUS)
         : Math.min(jitterRange, MAX_HINT_RADIUS);
 
     let offsetX, offsetY
 
     if (!isChaos) {
         // Hint is offset by break direction + random variation based on break amount
-        offsetX = amplifiedX + (Math.random() * jitterRange - jitterRange / 2)
-        offsetY = amplifiedY + (Math.random() * jitterRange - jitterRange / 2)
+        offsetX = amplifiedX + (Math.random() * jitterRange - jitterRange / 2);
+        offsetY = amplifiedY + (Math.random() * jitterRange - jitterRange / 2);
     } else {
 
-        offsetX = Math.random() * 80 - 40
-        offsetY = Math.random() * 80 - 40
+        offsetX = Math.random() * chaosJitterRange - chaosJitterRange / 2;
+        offsetY = Math.random() * chaosJitterRange - chaosJitterRange / 2;
     }
 
     return {

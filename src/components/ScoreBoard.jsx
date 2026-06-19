@@ -27,7 +27,7 @@ function ScoreBoard({ inning, inningFrame, strikes, balls, outs, scoreAway, scor
                 <span className="text-gray-400">Strikes</span>
                 <CountIndicator
                     count={strikes}
-                    max={3}
+                    max={2}
                     activeColor="bg-red-500"
                 />
             </div>
@@ -36,7 +36,7 @@ function ScoreBoard({ inning, inningFrame, strikes, balls, outs, scoreAway, scor
                 <span className="text-gray-400">Balls</span>
                 <CountIndicator
                     count={balls}
-                    max={4}
+                    max={3}
                     activeColor="bg-green-500"
                 />
             </div>
@@ -45,7 +45,7 @@ function ScoreBoard({ inning, inningFrame, strikes, balls, outs, scoreAway, scor
                 <span className="text-gray-400">Outs</span>
                 <CountIndicator
                     count={outs}
-                    max={3}
+                    max={2}
                     activeColor="bg-yellow-500"
                 />
             </div>
