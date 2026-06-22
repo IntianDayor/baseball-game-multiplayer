@@ -4,7 +4,7 @@ import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { calculateHint } from "../lib/engines/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType } from "../lib/engines/hit-calculator";
+import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
@@ -36,6 +36,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             }, (payload) => {
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
+                const effectiveSpeed = effectivePitchSpeed(pitchData.speed, pitch.power)
                 const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y });
                 setIncomingPitch(pitch);
                 setHint(hintResult);
@@ -43,7 +44,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setPitchTaken(false);
 
                 // Shows hint first after short delay canSwing is true
-                const readDelay = Math.round((10 - pitchData.speed) * 100 + 200);
+                const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
                 setTimeout (() => {
                     setCanSwing(true);
                     setPitchStartTime(Date.now());
@@ -60,7 +61,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         if (!canSwing || !incomingPitch) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
-        const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
+        const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+        const reactionTime = Math.round((10 - effectiveSpeed) * 200 + 500);
 
         timerRef.current = setTimeout(async () => {
 
@@ -102,6 +104,10 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             onClick={async () => {
 
                 if (!hint || !canSwing || !incomingPitch || !pitchStartTime) return;
+
+                const pitchData = pitches[incomingPitch.pitch_type];
+                const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+
                 const swingAtTime = Date.now();
                 setCanSwing(false);
 
@@ -120,7 +126,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         distance, 
                         hitZone, 
                         timingOffset, 
-                        pitches[incomingPitch.pitch_type].speed, 
+                        effectiveSpeed, 
                         incomingPitch.power, selected
                     )
                     : null;

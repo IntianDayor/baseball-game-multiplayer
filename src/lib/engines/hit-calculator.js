@@ -85,3 +85,8 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
 
     return applyTimingModifier(baseResult, timingQuality);
 }
+
+export function effectivePitchSpeed(baseSpeed, power) {
+
+    return baseSpeed * 0.5 + baseSpeed * 0.5 * (power / 100);
+}
