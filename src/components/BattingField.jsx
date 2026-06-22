@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
-import { calculateHint } from "../lib/engines/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
 import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
@@ -23,6 +22,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
 
     // Pitch Listener / Hint Visualizer
+    const readDelayRef = useRef(null);
     useEffect(() => {
         if (!roomCode) return;
 
@@ -37,28 +37,37 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
                 const effectiveSpeed = effectivePitchSpeed(pitchData.speed, pitch.power)
-                const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y });
                 setIncomingPitch(pitch);
-                setHint(hintResult);
+                setHint({
+                    hint_x: pitch.hint_x,
+                    hint_y: pitch.hint_y,
+                    breakScale: pitch.break_scale
+                });
                 setSwingResult(null);
                 setPitchTaken(false);
 
                 // Shows hint first after short delay canSwing is true
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
-                setTimeout (() => {
+
+                if (readDelayRef.current) clearTimeout(readDelayRef.current);
+
+                readDelayRef.current = setTimeout(() => {
                     setCanSwing(true);
                     setPitchStartTime(Date.now());
                 }, readDelay);
             })
             .subscribe()
 
-        return () => supabase.removeChannel(channel);
+        return () => {
+            if (readDelayRef.current) clearTimeout(readDelayRef.current);
+            supabase.removeChannel(channel);
+        };
     }, [roomCode, pitches]);
 
     // Game State Listener / Auto-take Timer
     const timerRef = useRef(null);
     useEffect(() => {
-        if (!canSwing || !incomingPitch) return;
+        if (!canSwing || !incomingPitch || !hint) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
         const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
@@ -68,8 +77,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
             setCanSwing(false)
             setPitchTaken(true); // Timer Expired
+            setLastPitchLocation({
+                x: incomingPitch.final_x,
+                y: incomingPitch.final_y
+            });
             setHint(null);
-            setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
 
             const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
@@ -77,7 +89,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 swing_x: null,
                 swing_y: null,
                 swing_type: null,
-                result: result
+                result
             });
 
             await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
@@ -86,7 +98,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         return () => clearTimeout(timerRef.current);
 
-    }, [canSwing, incomingPitch, isHost, pitches, roomCode]);
+    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
 
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
@@ -116,21 +128,21 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 clearTimeout(timerRef.current);
 
                 const distance = Math.sqrt(
-                    Math.pow(cursorPos.x - hint.hint_x, 2) +
-                    Math.pow(cursorPos.y - hint.hint_y, 2)
+                    Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
+                    Math.pow(cursorPos.y - incomingPitch.final_y, 2)
                 );
 
                 const isHit = distance <= hitZone;
                 const hitType = isHit
                     ? determineHitType(
-                        distance, 
-                        hitZone, 
-                        timingOffset, 
-                        effectiveSpeed, 
+                        distance,
+                        hitZone,
+                        timingOffset,
+                        effectiveSpeed,
                         incomingPitch.power, selected
                     )
                     : null;
-                    
+
                 // Roll fielder if it's a hit and not a foul
                 let finalResult = isHit ? hitType : 'swing_miss'
                 if (
@@ -140,11 +152,14 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     const fielderRoll = rollFielder(hitType, selected);
                     finalResult = fielderRoll.result;
                 }
-                
+
                 // After Swing
                 setSwingResult(finalResult);
+                setLastPitchLocation({
+                    x: incomingPitch.final_x,
+                    y: incomingPitch.final_y
+                });
                 setHint(null);
-                setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
                 await swingAt(incomingPitch.id, roomCode, {
                     swing_x: cursorPos.x,
                     swing_y: cursorPos.y,
