@@ -72,13 +72,10 @@ export const PITCH_LIBRARY = {
 export function getGamePitches() {
     const fixed = PITCH_LIBRARY.fastball
 
-    // Get all pitches except fastball
     const pool = Object.values(PITCH_LIBRARY).filter(p => !p.fixed);
 
-    // Shuffle pool
     const shuffled = pool.sort(()=> Math.random() - 0.5);
 
-    // Pick random ones
     return {
         Q: {...fixed, key: "Q" },
         W: {...shuffled[0], key: "W"},

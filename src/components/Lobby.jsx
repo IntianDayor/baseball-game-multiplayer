@@ -3,7 +3,6 @@ import { useState, useEffect } from "react";
 import { createRoom, joinRoom, startGame } from "../lib/rooms";
 
 function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
-    // Generates the Room Code
     function generateRandomCode() {
         return Math.random().toString(36).substring(2, 8).toUpperCase();
     }
@@ -37,7 +36,6 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
         return () => supabase.removeChannel(channel);
     }, [roomCode, setScreen]);
 
-    /* MAIN LOBBY */
     if (!mode) return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
             <h1 className="text-2xl font-bold mb-8">Lobby</h1>
@@ -70,7 +68,6 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
         </div>
     );
 
-    /* CREATE LOBBY */
     if (mode === 'waiting') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
             {isHost && (
@@ -108,7 +105,6 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
         </div>
     );
 
-    /* JOIN LOBBY */
     if (mode === 'join') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
             <h3 className="text-white font-bold p-4 text-2xl">Enter Room Code</h3>

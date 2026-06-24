@@ -7,7 +7,6 @@ import { getGameBats } from "./data/bats";
 import { useState } from "react";
 
 function App() {
-    /* Variables */
     const [screen, setScreen] = useState('menu');
     const [selected, setSelected] = useState('Q');
     const [bats] = useState(() => getGameBats());
@@ -19,7 +18,6 @@ function App() {
     const [myPitches, setMyPitches] = useState(null);
     const [opponentPitches, setOpponentPitches] = useState(null);
 
-    /* Screen Handler */
     if (screen === 'menu') return <MainMenu setScreen={setScreen} />
     if (screen === 'lobby') return <Lobby
         setScreen={setScreen}
@@ -28,7 +26,6 @@ function App() {
         roomCode={roomCode}
         setRoomCode={setRoomCode}
     />
-    /* Main Game */
     if (screen === 'game') return <Game
         setScreen={setScreen}
         bats={bats}
@@ -46,7 +43,6 @@ function App() {
         scoreHome={scoreHome}
     />
 
-    /* Game Over */
     if (screen === 'gameover') return <GameOver
         setScreen={setScreen}
         roomCode={roomCode}

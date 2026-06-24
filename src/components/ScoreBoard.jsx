@@ -1,6 +1,5 @@
 import { formatInning } from "../lib/engines/innings";
 
-/* Counter UI */
 function CountIndicator({ count, max, activeColor }) {
     return (
         <div className="flex gap-1">

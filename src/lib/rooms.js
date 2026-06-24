@@ -5,9 +5,6 @@ import { applyInningEngine } from './engines/innings';
 import { applyRunnerEngine } from './engines/runners';
 import { applyWalkEngine } from './engines/walks';
 
-// =============== LOBBY =============== //
-
-// ROOM CREATE
 export async function createRoom(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -26,7 +23,6 @@ export async function createRoom(roomCode) {
 
 }
 
-// ROOM JOIN
 export async function joinRoom(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -42,7 +38,6 @@ export async function joinRoom(roomCode) {
     return data;
 }
 
-// START GAME
 export async function startGame(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -57,7 +52,6 @@ export async function startGame(roomCode) {
     return data;
 }
 
-// Game Over
 export async function gameOver(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -72,9 +66,6 @@ export async function gameOver(roomCode) {
     return data;
 }
 
-// =============== COIN TOSS MECHANIC =============== //
-
-// CHOSEN COIN
 export async function coinChoice(roomCode, chosenCoin) {
     const { data, error } = await supabase
         .from('rooms')
@@ -89,7 +80,6 @@ export async function coinChoice(roomCode, chosenCoin) {
     return data;
 }
 
-// COIN TOSS RESULT
 export async function updateCoinTossRes(roomCode, coinRes) {
     const { data, error } = await supabase
         .from('rooms')
@@ -104,9 +94,6 @@ export async function updateCoinTossRes(roomCode, coinRes) {
     return data;
 }
 
-// =============== ROOM STATS =============== //
-
-// CHECK ROOM STATUS
 export async function checkRoomStatus(roomCode) {
     const { data, error } = await supabase
         .from('rooms')
@@ -118,11 +105,8 @@ export async function checkRoomStatus(roomCode) {
     return data;
 }
 
-// =============== PLAY ORDER - PITCHING OR BATTING =============== //
-
-// UPDATE ROLE
 export async function updatePlayerRole(roomCode, chosenRole, isHost) {
-    const oppposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
+    const oppposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher';
 
     const { data, error } = await supabase
         .from('rooms')
@@ -138,7 +122,6 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
     return data;
 }
 
-// PITCH THROWING
 export async function throwPitch(roomCode, pitchData) {
     const { data, error } = await supabase
         .from('pitches')
@@ -158,7 +141,6 @@ export async function throwPitch(roomCode, pitchData) {
     return data;
 }
 
-// SWING DETECTION
 export async function swingAt(pitchId, roomCode, swingData) {
     const { data, error } = await supabase
         .from('swings')
@@ -178,31 +160,23 @@ export async function swingAt(pitchId, roomCode, swingData) {
     return data
 }
 
-// =============== GAME STATE MANAGER =============== //
-
-// UPDATING GAME STATE
 export async function updateGameState(roomCode, result, isStrike, isHost) {
-    // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
 
-    // Count Manager
     let state = {
         ...current,
         ...applyCountEngine(current, result)
     };
 
-    // Walk Mechanic Manager
     const walk = applyWalkEngine(state, result);
     state = walk.state;
     result = walk.result;
 
-    // Runner Advancement Manager
     state = {
         ...state,
         ...applyRunnerEngine(state, result, isHost)
     };
 
-    // Inning / Inning Frame Manager
     const inning = applyInningEngine(state);
     state = inning.state;
 
@@ -233,7 +207,6 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     return data;
 }
 
-// ROLE SWITCHING
 export async function swapRoles(roomCode, currentRoleP1) {
     const newRoleP1 = currentRoleP1 === 'pitcher' ? 'batter' : 'pitcher';
     const newRoleP2 = currentRoleP1 === 'pitcher' ? 'pitcher' : 'batter';

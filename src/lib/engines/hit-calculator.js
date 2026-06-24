@@ -54,7 +54,7 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
 
     let baseResult;
 
-    if (swingType === 'Q') { // Power
+    if (swingType === 'Q') {
         if (total >= 115) baseResult = 'homerun';
         else if (total >= 90) baseResult = 'double';
         else if (total >= 60) baseResult = 'single';
@@ -62,14 +62,14 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
         else baseResult = 'out';
     }
 
-    if (swingType === 'W') { // Contact
+    if (swingType === 'W') {
         if (total >= 110) baseResult = 'double';
         else if (total >= 70) baseResult = 'single';
         else if (total >= 45) baseResult = 'foul';
         else baseResult = 'out';
     }
 
-    if (swingType === 'E') { // Bunt
+    if (swingType === 'E') {
         if (total >= 75) baseResult = 'single';
         else if (total >= 45) baseResult = 'sac_bunt';
         else baseResult = 'foul'

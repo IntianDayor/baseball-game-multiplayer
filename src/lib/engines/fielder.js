@@ -10,6 +10,6 @@ export function rollFielder(hitType, swingType) {
     const caught = Math.random() < chance
     return {
         caught,
-        result: caught ? 'out' : hitType // if caught -> out, else keep hit type
+        result: caught ? 'out' : hitType
     }
 }

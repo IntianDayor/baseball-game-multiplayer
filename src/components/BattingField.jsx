@@ -8,8 +8,6 @@ import { determineHitType } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
-    /* VARIABLES */
-    // Batting logic Variables
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
@@ -18,11 +16,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [canSwing, setCanSwing] = useState(false);
     const [pitchStartTime, setPitchStartTime] = useState(null);
 
-    // Contact Point Visualizer Variables // 
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
 
-    // Pitch Listener / Hint Visualizer
     useEffect(() => {
         if (!roomCode) return;
 
@@ -42,7 +38,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setSwingResult(null);
                 setPitchTaken(false);
 
-                // Shows hint first after short delay canSwing is true
                 const readDelay = Math.round((10 - pitchData.speed) * 100 + 200);
                 setTimeout (() => {
                     setCanSwing(true);
@@ -54,7 +49,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         return () => supabase.removeChannel(channel);
     }, [roomCode, pitches]);
 
-    // Game State Listener / Auto-take Timer
     const timerRef = useRef(null);
     useEffect(() => {
         if (!canSwing || !incomingPitch) return;
@@ -65,7 +59,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         timerRef.current = setTimeout(async () => {
 
             setCanSwing(false)
-            setPitchTaken(true); // Timer Expired
+            setPitchTaken(true);
             setHint(null);
             setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
 
@@ -97,8 +91,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     y: e.clientY - rect.top
                 });
             }}
-
-            // Batting Logic //
             onClick={async () => {
 
                 if (!hint || !canSwing || !incomingPitch || !pitchStartTime) return;
@@ -125,7 +117,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     )
                     : null;
                     
-                // Roll fielder if it's a hit and not a foul
                 let finalResult = isHit ? hitType : 'swing_miss'
                 if (
                     isHit &&
@@ -135,7 +126,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     finalResult = fielderRoll.result;
                 }
                 
-                // After Swing
                 setSwingResult(finalResult);
                 setHint(null);
                 setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
@@ -148,8 +138,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
             }}
         >
-
-            {/* Contact point - Testing */}
             <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                 style={{
                     width: `${hitZone * 2}px`,
@@ -158,8 +146,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     top: cursorPos.y - hitZone,
                 }}
             />
-
-            {/* Hint Area */}
             {hint && (
                 <div
                     className={`absolute rounded-full border-2 pointer-events-none opacity-40 ${canSwing ? 'border-green-400 opacity-100' : 'border-white'}`}
@@ -171,11 +157,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     }}
                 />
             )}
-
-            {/* Last Pitch location */}
             <LastPitchVisual location={lastPitchLocation} />
 
-            {/* Temp Bat Visual */}
             {swingResult && (
                 <div className={`absolute top-2 left-2 text-sm font-bold ${['single', 'double', 'homerun'].includes(swingResult) ? 'text-green-400' : 'text-red-400'
                     }`}>
@@ -193,8 +176,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     {incomingPitch.is_strike ? 'CALLED STRIKE!' : 'BALL!'}
                 </div>
             )}
-
-            {/* Strike Zone */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 < StrikeZone pitches={pitches} selected={selected} />
             </div>

@@ -5,9 +5,6 @@ import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
 
 function PitchingField({ pitches, selected, roomCode }) {
-    /* VARIABLES */
-
-    // Pitching Logic Variables
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [isCharging, setIsCharging] = useState(false);
     const [power, setPower] = useState(0);
@@ -16,7 +13,6 @@ function PitchingField({ pitches, selected, roomCode }) {
     const [hasActivePitch, setHasActivePitch] = useState(false);
     const [lastPitchMarker, setLastPitchMarker] = useState(null);
 
-    // Power Charging
     useEffect(() => {
         if (!isCharging) return;
 
@@ -27,13 +23,11 @@ function PitchingField({ pitches, selected, roomCode }) {
         return () => clearInterval(interval);
     }, [isCharging]);
 
-    // Latest Thrown Value
     const thrownRef = useRef(null);
     useEffect(() => {
         thrownRef.current = thrown;
     }, [thrown]);
 
-    // Swings Listener
     useEffect(() => {
         if (!roomCode) return;
 
@@ -78,8 +72,8 @@ function PitchingField({ pitches, selected, roomCode }) {
                 if (hasActivePitch) return;
 
                 setHasActivePitch(true);
-                const inZone = cursorPos.x > 64 && cursorPos.x < 192  // Min and Max
-                    && cursorPos.y > 64 && cursorPos.y < 192; // Min and Max
+                const inZone = cursorPos.x > 64 && cursorPos.x < 192
+                    && cursorPos.y > 64 && cursorPos.y < 192;
                 
                 setLastPitchMarker(null);
                 setThrown({
@@ -100,28 +94,22 @@ function PitchingField({ pitches, selected, roomCode }) {
                 setPower(0);
             }}
         >
-            { /* Strike Zone */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 < StrikeZone pitches={pitches} selected={selected} />
             </div>
 
-            {/* Crosshair */}
             <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                 style={{
                     left: cursorPos.x - 8,
                     top: cursorPos.y - 8,
                 }}
             />
-
-            {/* Power Bar */}
             <div className="absolute bottom-2 left-2 right-2 h-3 bg-gray-700 rounded">
                 <div
                     className="h-full bg-red-500 rounded transition-all"
                     style={{ width: `${power}%` }}
                 />
             </div>
-
-            {/* Strike Feedback */}
             {thrown && (
                 <div className={`absolute top-2 left-2 text-sm font-bold 
                 ${thrown.isStrike ? 'text-green-400' : 'text-red-400'}`
@@ -129,8 +117,6 @@ function PitchingField({ pitches, selected, roomCode }) {
                     {thrown.isStrike ? 'STRIKE ZONE' : 'BALL'} - Power: {Math.round(thrown.power)}%
                 </div>
             )}
-
-            {/* Temp Pitch Result visual */}
             <div className="absolute top-8 right-4">
                 {pitchResult === 'homerun' && <div className="text-red-400">HOMERUN!</div>}
                 {pitchResult === 'double' && <div className="text-red-400">DOUBLE!</div>}
@@ -141,8 +127,6 @@ function PitchingField({ pitches, selected, roomCode }) {
                 {pitchResult === 'called_strike' && <div className="text-green-400">CALLED STRIKE!</div>}
                 {pitchResult === 'ball' && <div className="text-yellow-400">BALL!</div>}
             </div>
-
-            {/* Last Pitch Visual */}
             <LastPitchVisual
                 location={
                     lastPitchMarker

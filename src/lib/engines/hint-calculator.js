@@ -23,7 +23,6 @@ export function calculateHint(pitch) {
     let offsetX, offsetY
 
     if (!isChaos) {
-        // Hint is offset by break direction + random variation based on break amount
         offsetX = amplifiedX + (Math.random() * jitterRange - jitterRange / 2);
         offsetY = amplifiedY + (Math.random() * jitterRange - jitterRange / 2);
     } else {
