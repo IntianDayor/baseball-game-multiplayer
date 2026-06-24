@@ -16,13 +16,19 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [pitchTaken, setPitchTaken] = useState(false);
     const [canSwing, setCanSwing] = useState(false);
     const [pitchStartTime, setPitchStartTime] = useState(null);
+    const [isBallFlying, setIsBallFlying] = useState(false);
 
     // Contact Point Visualizer Variables // 
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
 
-    // Pitch Listener / Hint Visualizer
+    // Timer References
     const readDelayRef = useRef(null);
+    const autoTakeTimerRef = useRef(null);
+    const hintDurationRef = useRef(null);
+    const reactionTimeRef = useRef(null);
+
+    // Pitch Listener / Hint Visualizer
     useEffect(() => {
         if (!roomCode) return;
 
@@ -46,13 +52,15 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setSwingResult(null);
                 setPitchTaken(false);
 
-                // Shows hint first after short delay canSwing is true
+                // Shows hint first then after short delay canSwing is true
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
+                hintDurationRef.current = readDelay;
 
                 if (readDelayRef.current) clearTimeout(readDelayRef.current);
 
                 readDelayRef.current = setTimeout(() => {
                     setCanSwing(true);
+                    setIsBallFlying(true);
                     setPitchStartTime(Date.now());
                 }, readDelay);
             })
@@ -65,15 +73,15 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     }, [roomCode, pitches]);
 
     // Game State Listener / Auto-take Timer
-    const timerRef = useRef(null);
     useEffect(() => {
         if (!canSwing || !incomingPitch || !hint) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
         const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
         const reactionTime = Math.round((10 - effectiveSpeed) * 200 + 500);
+        reactionTimeRef.current = reactionTime;
 
-        timerRef.current = setTimeout(async () => {
+        autoTakeTimerRef.current = setTimeout(async () => {
 
             setCanSwing(false)
             setPitchTaken(true); // Timer Expired
@@ -82,6 +90,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 y: incomingPitch.final_y
             });
             setHint(null);
+            setIsBallFlying(false);
 
             const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
@@ -96,10 +105,13 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         }, reactionTime);
 
-        return () => clearTimeout(timerRef.current);
+        return () => clearTimeout(autoTakeTimerRef.current);
 
     }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
 
+    const totalHintDuration = (hintDurationRef.current ?? 0) + (reactionTimeRef.current ?? 0);
+
+    // Pitch Set fetching guard
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
     return (
@@ -125,7 +137,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 const timingOffset = swingAtTime - pitchStartTime;
 
-                clearTimeout(timerRef.current);
+                clearTimeout(autoTakeTimerRef.current);
 
                 const distance = Math.sqrt(
                     Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
@@ -160,6 +172,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     y: incomingPitch.final_y
                 });
                 setHint(null);
+                setIsBallFlying(false);
                 await swingAt(incomingPitch.id, roomCode, {
                     swing_x: cursorPos.x,
                     swing_y: cursorPos.y,
@@ -181,14 +194,26 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             />
 
             {/* Hint Area */}
-            {hint && (
+            {hint && incomingPitch && (
                 <div
-                    className={`absolute rounded-full border-2 pointer-events-none opacity-40 ${canSwing ? 'border-green-400 opacity-100' : 'border-white'}`}
+                    className={`absolute rounded-full border-2 pointer-events-none ${canSwing ? 'border-green-400' : 'border-white'}`}
                     style={{
-                        width: `${(hint.breakScale ?? 8) * 4}px`,
-                        height: `${(hint.breakScale ?? 8) * 4}px`,
-                        left: hint.hint_x - ((hint.breakScale ?? 8) * 2),
-                        top: hint.hint_y - ((hint.breakScale ?? 8) * 2),
+                        width: isBallFlying ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
+                        height: isBallFlying ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
+                        left: isBallFlying
+                            ? incomingPitch.final_x - 10
+                            : hint.hint_x - (hint.breakScale ?? 8) * 2,
+                        top: isBallFlying
+                            ? incomingPitch.final_y - 10
+                            : hint.hint_y - (hint.breakScale ?? 8) * 2,
+                        opacity: isBallFlying ? 0 : 1,
+                        transition: `
+                            width ${totalHintDuration}ms ease-in, 
+                            height ${totalHintDuration}ms ease-in, 
+                            left ${totalHintDuration}ms ease-in, 
+                            top ${totalHintDuration}ms ease-in, 
+                            opacity ${totalHintDuration}ms ease-in
+                            `,
                     }}
                 />
             )}
