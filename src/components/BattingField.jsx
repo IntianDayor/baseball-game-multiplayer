@@ -5,6 +5,13 @@ import { supabase } from "../lib/supabase";
 import { swingAt, updateGameState } from "../lib/rooms";
 import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
+import { getFrames, getBackgroundPosition } from "../lib/engines/sprites";
+
+/* MATH FUNCTIONS */
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const calcReactionTime = (effectiveSpeed) =>
+    Math.round((10 - effectiveSpeed) * 200 + 500);
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     /* VARIABLES */
@@ -27,6 +34,14 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const autoTakeTimerRef = useRef(null);
     const hintDurationRef = useRef(null);
     const reactionTimeRef = useRef(null);
+    const isBallFlyingRef = useRef(false);
+    const rafRef = useRef(null);
+    const animStartTimeRef = useRef(null);
+    const incomingPitchRef = useRef(null);
+
+    // Animation Variable
+    const [ballPos, setBallPos] = useState({ x: 0, y: 0 })
+    const [frameIndex, setFrameIndex] = useState(0);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -43,7 +58,10 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
                 const effectiveSpeed = effectivePitchSpeed(pitchData.speed, pitch.power)
+                const reactionTime = calcReactionTime(effectiveSpeed);
+                reactionTimeRef.current = reactionTime;
                 setIncomingPitch(pitch);
+                incomingPitchRef.current = pitch;
                 setHint({
                     hint_x: pitch.hint_x,
                     hint_y: pitch.hint_y,
@@ -59,9 +77,42 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 if (readDelayRef.current) clearTimeout(readDelayRef.current);
 
                 readDelayRef.current = setTimeout(() => {
+
+                    animStartTimeRef.current = Date.now();
                     setCanSwing(true);
                     setIsBallFlying(true);
                     setPitchStartTime(Date.now());
+                    isBallFlyingRef.current = true;
+
+                    const animate = () => {
+                        if (!isBallFlyingRef.current) return;
+
+                        const now = Date.now();
+
+                        const t = clamp((now - animStartTimeRef.current) / reactionTimeRef.current, 0, 1);
+
+                        let breakProgress = clamp(
+                            (t - pitchData.breakTiming) / (1 - pitchData.breakTiming),
+                            0, 1
+                        );
+
+                        // Ease-in
+                        breakProgress = breakProgress * breakProgress;
+
+                        const x = lerp(incomingPitchRef.current.aim_x, incomingPitchRef.current.final_x, breakProgress);
+                        const y = lerp(incomingPitchRef.current.aim_y, incomingPitchRef.current.final_y, breakProgress);
+
+                        setBallPos({ x, y });
+
+                        setFrameIndex(getFrames(t, 16)); // 16 Frames for row 1
+
+                        if (t < 1) {
+                            rafRef.current = requestAnimationFrame(animate)
+                        }
+                    };
+
+                    rafRef.current = requestAnimationFrame(animate);
+
                 }, readDelay);
             })
             .subscribe()
@@ -78,7 +129,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         const pitchData = pitches[incomingPitch.pitch_type];
         const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
-        const reactionTime = Math.round((10 - effectiveSpeed) * 200 + 500);
+        const reactionTime = calcReactionTime(effectiveSpeed);
         reactionTimeRef.current = reactionTime;
 
         autoTakeTimerRef.current = setTimeout(async () => {
@@ -91,6 +142,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             });
             setHint(null);
             setIsBallFlying(false);
+            isBallFlyingRef.current = false;
+
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
             const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
@@ -109,6 +163,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
     }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
 
+    // HINT ANIMATION
     const totalHintDuration = (hintDurationRef.current ?? 0) + (reactionTimeRef.current ?? 0);
 
     // Pitch Set fetching guard
@@ -127,7 +182,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             // Batting Logic //
             onClick={async () => {
 
-                if (!hint || !canSwing || !incomingPitch || !pitchStartTime) return;
+                if (!canSwing || !incomingPitch || !pitchStartTime) return;
 
                 const pitchData = pitches[incomingPitch.pitch_type];
                 const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
@@ -173,6 +228,10 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 });
                 setHint(null);
                 setIsBallFlying(false);
+                isBallFlyingRef.current = false;
+
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
                 await swingAt(incomingPitch.id, roomCode, {
                     swing_x: cursorPos.x,
                     swing_y: cursorPos.y,
@@ -214,6 +273,23 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             top ${totalHintDuration}ms ease-in, 
                             opacity ${totalHintDuration}ms ease-in
                             `,
+                    }}
+                />
+            )}
+
+            {/* Ball Sprite */}
+            {isBallFlying && (
+                <div
+                    className="absolute pointer-events-none"
+                    style={{
+                        width: '64px',
+                        height: '64px',
+                        left: ballPos.x - 32,
+                        top: ballPos.y - 32,
+                        backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER.png')`,
+                        backgroundPosition: getBackgroundPosition(frameIndex, 64, 0, 64),
+                        backgroundSize: '1024px 128px',
+                        backgroundRepeat: 'no-repeat',
                     }}
                 />
             )}
