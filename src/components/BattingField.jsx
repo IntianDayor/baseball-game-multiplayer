@@ -5,7 +5,7 @@ import { supabase } from "../lib/supabase";
 import { swingAt, updateGameState } from "../lib/rooms";
 import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
-import { getFrames, getBackgroundPosition } from "../lib/engines/sprites";
+import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
 
 /* MATH FUNCTIONS */
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -104,7 +104,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         setBallPos({ x, y });
 
-                        setFrameIndex(getFrames(t, 16)); // 16 Frames for row 1
+                        setFrameIndex(getFrames(t, 32));
 
                         if (t < 1) {
                             rafRef.current = requestAnimationFrame(animate)
@@ -282,13 +282,10 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 <div
                     className="absolute pointer-events-none"
                     style={{
-                        width: '64px',
-                        height: '64px',
-                        left: ballPos.x - 32,
-                        top: ballPos.y - 32,
-                        backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER.png')`,
-                        backgroundPosition: getBackgroundPosition(frameIndex, 64, 0, 64),
-                        backgroundSize: '1024px 128px',
+                        ...getScaledSpritePosition(frameIndex, 128, BALL_DISPLAY_SIZE, 8, 4),
+                        left: ballPos.x - BALL_DISPLAY_SIZE / 2,
+                        top: ballPos.y - BALL_DISPLAY_SIZE / 2,
+                        backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
                         backgroundRepeat: 'no-repeat',
                     }}
                 />
