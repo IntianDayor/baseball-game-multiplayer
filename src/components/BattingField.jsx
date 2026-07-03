@@ -3,7 +3,7 @@ import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
+import { determineHitType, effectivePitchSpeed, getTrajectory } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
 
@@ -83,7 +83,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     setIsBallFlying(true);
                     setPitchStartTime(Date.now());
                     isBallFlyingRef.current = true;
-
+                    
+                    // ANIMATION
                     const animate = () => {
                         if (!isBallFlyingRef.current) return;
 
@@ -199,12 +200,19 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     Math.pow(cursorPos.y - incomingPitch.final_y, 2)
                 );
 
+                const verticalOffset = cursorPos.y - incomingPitch.final_y;
+
                 const isHit = distance <= hitZone;
+
+                const hitTrajectory = getTrajectory(verticalOffset, hitZone);
+
                 const hitType = isHit
                     ? determineHitType(
                         distance,
                         hitZone,
+                        hitTrajectory,
                         timingOffset,
+                        reactionTimeRef.current,
                         effectiveSpeed,
                         incomingPitch.power, selected
                     )
