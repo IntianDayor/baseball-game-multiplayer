@@ -3,6 +3,7 @@ import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
+import { resolvePitchLocation } from "../lib/engines/pitch-resolver";
 
 function PitchingField({ pitches, selected, roomCode }) {
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
@@ -66,31 +67,52 @@ function PitchingField({ pitches, selected, roomCode }) {
             }}
             onMouseDown={() => setIsCharging(true)}
             onMouseUp={async () => {
-                
+
                 setIsCharging(false);
 
                 if (hasActivePitch) return;
 
                 setHasActivePitch(true);
-                const inZone = cursorPos.x > 64 && cursorPos.x < 192
-                    && cursorPos.y > 64 && cursorPos.y < 192;
-                
+                const pitchData = pitches[selected];
+                const resolvedPitch = resolvePitchLocation({
+                    ...pitchData,
+                    aim_x: cursorPos.x,
+                    aim_y: cursorPos.y
+                });
+                const inZone =
+                    resolvedPitch.final_x > 64 &&
+                    resolvedPitch.final_x < 192 &&
+                    resolvedPitch.final_y > 64 &&
+                    resolvedPitch.final_y < 192;
                 setLastPitchMarker(null);
+
                 setThrown({
                     power,
-                    aimX: cursorPos.x,
-                    aimY: cursorPos.y,
-                    isStrike: inZone,
-                    pitch: pitches[selected]
+                    aim_x: cursorPos.x,
+                    aim_y: cursorPos.y,
+                    hint_x: resolvedPitch.hint_x,
+                    hint_y: resolvedPitch.hint_y,
+                    final_x: resolvedPitch.final_x,
+                    final_y: resolvedPitch.final_y,
+                    break_scale: resolvedPitch.breakScale,
+                    is_strike: inZone,
+                    pitch: pitchData
                 });
+
                 await throwPitch(roomCode, {
                     aim_x: cursorPos.x,
                     aim_y: cursorPos.y,
-                    power: power,
+                    hint_x: resolvedPitch.hint_x,
+                    hint_y: resolvedPitch.hint_y,
+                    final_x: resolvedPitch.final_x,
+                    final_y: resolvedPitch.final_y,
+                    break_scale: resolvedPitch.breakScale,
+                    power,
                     pitch_type: selected,
                     is_strike: inZone,
                     thrown_at: new Date().toISOString()
                 });
+
                 setPower(0);
             }}
         >
@@ -112,9 +134,9 @@ function PitchingField({ pitches, selected, roomCode }) {
             </div>
             {thrown && (
                 <div className={`absolute top-2 left-2 text-sm font-bold 
-                ${thrown.isStrike ? 'text-green-400' : 'text-red-400'}`
+                ${thrown.is_strike ? 'text-green-400' : 'text-red-400'}`
                 }>
-                    {thrown.isStrike ? 'STRIKE ZONE' : 'BALL'} - Power: {Math.round(thrown.power)}%
+                    {thrown.is_strike ? 'STRIKE ZONE' : 'BALL'} - Power: {Math.round(thrown.power)}%
                 </div>
             )}
             <div className="absolute top-8 right-4">
@@ -131,8 +153,8 @@ function PitchingField({ pitches, selected, roomCode }) {
                 location={
                     lastPitchMarker
                         ? {
-                            x: lastPitchMarker.aimX,
-                            y: lastPitchMarker.aimY
+                            x: lastPitchMarker.final_x,
+                            y: lastPitchMarker.final_y
                         }
                         : null
                 }

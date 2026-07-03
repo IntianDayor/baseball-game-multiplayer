@@ -2,10 +2,15 @@ import { useState, useEffect, useRef } from "react";
 import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
-import { calculateHint } from "../lib/engines/hint-calculator";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType } from "../lib/engines/hit-calculator";
+import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
+import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+const calcReactionTime = (effectiveSpeed) =>
+    Math.round((10 - effectiveSpeed) * 200 + 500);
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [incomingPitch, setIncomingPitch] = useState(null);
@@ -15,9 +20,22 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [pitchTaken, setPitchTaken] = useState(false);
     const [canSwing, setCanSwing] = useState(false);
     const [pitchStartTime, setPitchStartTime] = useState(null);
+    const [isBallFlying, setIsBallFlying] = useState(false);
 
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
+
+    const readDelayRef = useRef(null);
+    const autoTakeTimerRef = useRef(null);
+    const hintDurationRef = useRef(null);
+    const reactionTimeRef = useRef(null);
+    const isBallFlyingRef = useRef(false);
+    const rafRef = useRef(null);
+    const animStartTimeRef = useRef(null);
+    const incomingPitchRef = useRef(null);
+
+    const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
+    const [frameIndex, setFrameIndex] = useState(0);
 
     useEffect(() => {
         if (!roomCode) return;
@@ -32,36 +50,78 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             }, (payload) => {
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
-                const hintResult = calculateHint({ ...pitchData, aim_x: pitch.aim_x, aim_y: pitch.aim_y });
+                const effectiveSpeed = effectivePitchSpeed(pitchData.speed, pitch.power)
+                const reactionTime = calcReactionTime(effectiveSpeed);
+                reactionTimeRef.current = reactionTime;
                 setIncomingPitch(pitch);
-                setHint(hintResult);
+                incomingPitchRef.current = pitch;
+                setHint({
+                    hint_x: pitch.hint_x,
+                    hint_y: pitch.hint_y,
+                    breakScale: pitch.break_scale
+                });
                 setSwingResult(null);
                 setPitchTaken(false);
 
                 const readDelay = Math.round((10 - pitchData.speed) * 100 + 200);
-                setTimeout (() => {
+                readDelayRef.current = setTimeout(() => {
                     setCanSwing(true);
+                    setIsBallFlying(true);
                     setPitchStartTime(Date.now());
+                    isBallFlyingRef.current = true;
+
+                    animStartTimeRef.current = Date.now();
+
+                    const animate = () => {
+                        if (!isBallFlyingRef.current) return;
+
+                        const now = Date.now();
+                        const t = clamp((now - animStartTimeRef.current) / reactionTimeRef.current, 0, 1);
+                        let breakProgress = clamp(
+                            (t - pitchData.breakTiming) / (1 - pitchData.breakTiming),
+                            0,
+                            1
+                        );
+                        breakProgress = breakProgress * breakProgress;
+                        const x = lerp(incomingPitchRef.current.aim_x, incomingPitchRef.current.final_x, breakProgress);
+                        const y = lerp(incomingPitchRef.current.aim_y, incomingPitchRef.current.final_y, breakProgress);
+
+                        setBallPos({ x, y });
+                        setFrameIndex(getFrames(t, 32));
+
+                        if (t < 1) {
+                            rafRef.current = requestAnimationFrame(animate);
+                        }
+                    };
+
+                    rafRef.current = requestAnimationFrame(animate);
                 }, readDelay);
             })
             .subscribe()
 
-        return () => supabase.removeChannel(channel);
+        return () => {
+            if (readDelayRef.current) clearTimeout(readDelayRef.current);
+            supabase.removeChannel(channel);
+        };
     }, [roomCode, pitches]);
 
-    const timerRef = useRef(null);
     useEffect(() => {
-        if (!canSwing || !incomingPitch) return;
+        if (!canSwing || !incomingPitch || !hint) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
-        const reactionTime = Math.round((10 - pitchData.speed) * 200 + 500);
+        const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+        const reactionTime = calcReactionTime(effectiveSpeed);
+        reactionTimeRef.current = reactionTime;
 
-        timerRef.current = setTimeout(async () => {
+        autoTakeTimerRef.current = setTimeout(async () => {
 
-            setCanSwing(false)
+            setCanSwing(false);
             setPitchTaken(true);
             setHint(null);
-            setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
+            setIsBallFlying(false);
+            isBallFlyingRef.current = false;
+
+            if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
             const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
@@ -69,16 +129,18 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 swing_x: null,
                 swing_y: null,
                 swing_type: null,
-                result: result
+                result
             });
 
             await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
 
         }, reactionTime);
 
-        return () => clearTimeout(timerRef.current);
+        return () => clearTimeout(autoTakeTimerRef.current);
 
-    }, [canSwing, incomingPitch, isHost, pitches, roomCode]);
+    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
+
+    const totalHintDuration = (hintDurationRef.current ?? 0) + (reactionTimeRef.current ?? 0);
 
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
@@ -93,31 +155,34 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             }}
             onClick={async () => {
 
-                if (!hint || !canSwing || !incomingPitch || !pitchStartTime) return;
+                if (!canSwing || !incomingPitch || !pitchStartTime) return;
+
+                const pitchData = pitches[incomingPitch.pitch_type];
+                const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+
                 const swingAtTime = Date.now();
                 setCanSwing(false);
 
                 const timingOffset = swingAtTime - pitchStartTime;
 
-                clearTimeout(timerRef.current);
+                clearTimeout(autoTakeTimerRef.current);
 
                 const distance = Math.sqrt(
-                    Math.pow(cursorPos.x - hint.hint_x, 2) +
-                    Math.pow(cursorPos.y - hint.hint_y, 2)
+                    Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
+                    Math.pow(cursorPos.y - incomingPitch.final_y, 2)
                 );
 
                 const isHit = distance <= hitZone;
                 const hitType = isHit
                     ? determineHitType(
-                        distance, 
-                        hitZone, 
-                        timingOffset, 
-                        pitches[incomingPitch.pitch_type].speed, 
+                        distance,
+                        hitZone,
+                        timingOffset,
+                        effectiveSpeed,
                         incomingPitch.power, selected
                     )
                     : null;
-                    
-                let finalResult = isHit ? hitType : 'swing_miss'
+                let finalResult = isHit ? hitType : 'swing_miss';
                 if (
                     isHit &&
                     ['single', 'double', 'homerun'].includes(hitType)
@@ -125,10 +190,17 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     const fielderRoll = rollFielder(hitType, selected);
                     finalResult = fielderRoll.result;
                 }
-                
                 setSwingResult(finalResult);
+                setLastPitchLocation({
+                    x: incomingPitch.final_x,
+                    y: incomingPitch.final_y
+                });
                 setHint(null);
-                setLastPitchLocation({ x: incomingPitch.aim_x, y: incomingPitch.aim_y });
+                setIsBallFlying(false);
+                isBallFlyingRef.current = false;
+
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
                 await swingAt(incomingPitch.id, roomCode, {
                     swing_x: cursorPos.x,
                     swing_y: cursorPos.y,
@@ -146,14 +218,40 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     top: cursorPos.y - hitZone,
                 }}
             />
+
             {hint && (
                 <div
-                    className={`absolute rounded-full border-2 pointer-events-none opacity-40 ${canSwing ? 'border-green-400 opacity-100' : 'border-white'}`}
+                    className={`absolute rounded-full border-2 pointer-events-none ${canSwing ? 'border-green-400' : 'border-white'}`}
                     style={{
-                        width: `${(hint.breakScale ?? 8) * 4}px`,
-                        height: `${(hint.breakScale ?? 8) * 4}px`,
-                        left: hint.hint_x - ((hint.breakScale ?? 8) * 2),
-                        top: hint.hint_y - ((hint.breakScale ?? 8) * 2),
+                        width: isBallFlying ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
+                        height: isBallFlying ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
+                        left: isBallFlying
+                            ? incomingPitch.final_x - 10
+                            : hint.hint_x - (hint.breakScale ?? 8) * 2,
+                        top: isBallFlying
+                            ? incomingPitch.final_y - 10
+                            : hint.hint_y - (hint.breakScale ?? 8) * 2,
+                        opacity: isBallFlying ? 0 : 1,
+                        transition: `
+                            width ${totalHintDuration}ms ease-in, 
+                            height ${totalHintDuration}ms ease-in, 
+                            left ${totalHintDuration}ms ease-in, 
+                            top ${totalHintDuration}ms ease-in, 
+                            opacity ${totalHintDuration}ms ease-in
+                            `,
+                    }}
+                />
+            )}
+
+            {isBallFlying && (
+                <div
+                    className="absolute pointer-events-none"
+                    style={{
+                        ...getScaledSpritePosition(frameIndex, 128, BALL_DISPLAY_SIZE, 8, 4),
+                        left: ballPos.x - BALL_DISPLAY_SIZE / 2,
+                        top: ballPos.y - BALL_DISPLAY_SIZE / 2,
+                        backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
+                        backgroundRepeat: 'no-repeat',
                     }}
                 />
             )}

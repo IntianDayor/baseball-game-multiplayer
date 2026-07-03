@@ -307,7 +307,7 @@ function Game({
     );
 
     return (
-        <Loading />
+        <h1>Somethng went wrong... Try to refresh browser!</h1>
     );
 }
 

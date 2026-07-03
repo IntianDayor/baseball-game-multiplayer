@@ -125,15 +125,20 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
 export async function throwPitch(roomCode, pitchData) {
     const { data, error } = await supabase
         .from('pitches')
-        .insert({
+        .insert([{
             room_id: roomCode,
-            pitch_type: pitchData.pitch_type,
             aim_x: pitchData.aim_x,
             aim_y: pitchData.aim_y,
+            final_x: pitchData.final_x,
+            final_y: pitchData.final_y,
+            hint_x: pitchData.hint_x,
+            hint_y: pitchData.hint_y,
+            break_scale: pitchData.break_scale,
             power: pitchData.power,
+            pitch_type: pitchData.pitch_type,
             is_strike: pitchData.is_strike,
             thrown_at: pitchData.thrown_at
-        })
+        }])
         .select()
         .single()
 
