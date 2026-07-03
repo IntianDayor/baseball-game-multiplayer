@@ -6,6 +6,7 @@ import { swingAt, updateGameState } from "../lib/rooms";
 import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
+import ballSpriteSheet from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png";
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
@@ -250,7 +251,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         ...getScaledSpritePosition(frameIndex, 128, BALL_DISPLAY_SIZE, 8, 4),
                         left: ballPos.x - BALL_DISPLAY_SIZE / 2,
                         top: ballPos.y - BALL_DISPLAY_SIZE / 2,
-                        backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
+                        backgroundImage: `url('${ballSpriteSheet}')`,
                         backgroundRepeat: 'no-repeat',
                     }}
                 />
