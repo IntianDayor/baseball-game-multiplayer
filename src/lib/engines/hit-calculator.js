@@ -1,11 +1,3 @@
-/*
-FALL BACK HIT SYSTEM
-Let trajectory influence total before hitType is decided — instead of overriding after,
- feed a bonus/penalty into the total score based on trajectory before the swingType thresholds run. 
- Grounders get a penalty to total, fly balls get little to none, liners maybe a small bonus. 
-This feels more "physically simulated" but is a bigger change to determineHitType's internals.
-*/
-
 export const PERFECT_WINDOW_MS = 40;
 
 export function getTrajectory(verticalOffset, radius) {
@@ -59,7 +51,6 @@ function applyTimingModifier(baseResult, timingQuality) {
     return baseResult;
 }
 
-// TODO: Something using PitchSpeed
 export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, pitchPower, swingType) {
 
     const quality = getContactQuality(distance, radius);

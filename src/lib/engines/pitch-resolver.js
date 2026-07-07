@@ -23,42 +23,34 @@ export function resolvePitchLocation(pitch) {
     disguised = false,
   } = pitch;
 
-  // BREAK RESOLUTION
   const { bx, by } = resolveBreak(breakX, breakY);
 
   const breakMagnitude = Math.sqrt(bx * bx + by * by);
 
-  // MOVEMENT MODEL (core physics)
   const movementScale = 4 + breakMagnitude * 1.8;
 
   const moveX = bx * movementScale;
   const moveY = by * movementScale;
 
-  // CONTROL / ACCURACY MODEL
   const speedFactor = clamp(speed / 10, 0.25, 1);
 
   let controlSpread = clamp(16 * (1 - speedFactor), 3, 14);
 
-  // chaos overrides control
   if (chaos) controlSpread = 30;
 
-  // disguise slightly reduces readable accuracy
   if (disguised) controlSpread *= 1.2;
 
   const noiseX = randomRange(-controlSpread, controlSpread);
   const noiseY = randomRange(-controlSpread, controlSpread);
 
-  // FINAL BALL POSITION
   const final_x = aim_x + moveX + noiseX;
   const final_y = aim_y + moveY + noiseY;
 
-  // HINT SYSTEM
-  const hintBias = 0.25; // how close hint is to real movement
+  const hintBias = 0.25;
 
   const predictedX = aim_x + moveX * hintBias;
   const predictedY = aim_y + moveY * hintBias;
 
-  // hint uncertainty = depends on chaos + break
   let hintRadius;
 
   if (chaos) {
