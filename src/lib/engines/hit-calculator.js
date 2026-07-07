@@ -1,3 +1,22 @@
+/*
+FALL BACK HIT SYSTEM
+Let trajectory influence total before hitType is decided — instead of overriding after,
+ feed a bonus/penalty into the total score based on trajectory before the swingType thresholds run. 
+ Grounders get a penalty to total, fly balls get little to none, liners maybe a small bonus. 
+This feels more "physically simulated" but is a bigger change to determineHitType's internals.
+*/
+
+export const PERFECT_WINDOW_MS = 40;
+
+export function getTrajectory(verticalOffset, radius) {
+    const threshold = radius * 0.3;
+
+    if (verticalOffset < -threshold) return 'grounder';
+    if (verticalOffset > threshold) return 'flyball';
+
+    return 'liner';
+}
+
 function getContactQuality(distance, radius) {
     if (distance > radius) return 'miss';
     if (distance <= radius * 0.25) return 'perfect';
@@ -5,12 +24,12 @@ function getContactQuality(distance, radius) {
     return 'bad';
 }
 
-export function getTimingQuality(timingOffset, pitchSpeed) {
-    const adjusted = timingOffset - (pitchSpeed * 20);
+export function getTimingQuality(timingOffset, reactionTime) {
+    const adjusted = timingOffset - reactionTime;
 
     if (adjusted < -120) return "very_early";
-    if (adjusted < -40) return "early";
-    if (adjusted < 40) return "perfect";
+    if (adjusted < -PERFECT_WINDOW_MS) return "early";
+    if (adjusted < PERFECT_WINDOW_MS) return "perfect";
     if (adjusted < 120) return "late";
     return "very_late";
 }
@@ -25,7 +44,7 @@ function applyTimingModifier(baseResult, timingQuality) {
         if (baseResult === 'double') return roll < 0.40 ? 'foul' : 'single';
         if (baseResult === 'single') return roll < 0.60 ? 'foul' : 'single';
 
-        return baseResult;  
+        return baseResult;
     }
 
     if (timingQuality === 'very_early' || timingQuality === 'very_late') {
@@ -36,11 +55,12 @@ function applyTimingModifier(baseResult, timingQuality) {
 
         return baseResult;
     }
-    
+
     return baseResult;
 }
 
-export function determineHitType(distance, radius, timingOffset, pitchSpeed, pitchPower, swingType) {
+// TODO: Something using PitchSpeed
+export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, pitchPower, swingType) {
 
     const quality = getContactQuality(distance, radius);
 
@@ -50,7 +70,7 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
 
     const total = distanceScore + meatballBonus;
 
-    let timingQuality = getTimingQuality(timingOffset, pitchSpeed);
+    let timingQuality = getTimingQuality(timingOffset, reactionTime);
 
     let baseResult;
 
@@ -75,10 +95,14 @@ export function determineHitType(distance, radius, timingOffset, pitchSpeed, pit
         else baseResult = 'foul'
     }
 
+     if (trajectory === 'grounder') {
+        if (baseResult === 'homerun') baseResult = 'single';
+    }
+
     if (quality === 'bad') {
         if (baseResult === 'homerun') baseResult = 'single';
     }
-    
+
     if (quality === 'good') {
         if (baseResult === 'homerun') baseResult = 'double';
     }

@@ -3,7 +3,7 @@ import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType, effectivePitchSpeed } from "../lib/engines/hit-calculator";
+import { determineHitType, effectivePitchSpeed, getTrajectory, PERFECT_WINDOW_MS } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
 import ballSpriteSheet from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png";
@@ -22,6 +22,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [canSwing, setCanSwing] = useState(false);
     const [pitchStartTime, setPitchStartTime] = useState(null);
     const [isBallFlying, setIsBallFlying] = useState(false);
+    const [isPerfectWindow, setIsPerfectWindow] = useState(false);
 
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
@@ -77,7 +78,12 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         if (!isBallFlyingRef.current) return;
 
                         const now = Date.now();
+                        
+                        const elapsed = now - animStartTimeRef.current;
                         const t = clamp((now - animStartTimeRef.current) / reactionTimeRef.current, 0, 1);
+
+                        setIsPerfectWindow(Math.abs(elapsed - reactionTimeRef.current) <= PERFECT_WINDOW_MS);
+
                         let breakProgress = clamp(
                             (t - pitchData.breakTiming) / (1 - pitchData.breakTiming),
                             0,
@@ -90,8 +96,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         setBallPos({ x, y });
                         setFrameIndex(getFrames(t, 32));
 
-                        if (t < 1) {
-                            rafRef.current = requestAnimationFrame(animate);
+                        if (elapsed < reactionTimeRef.current + PERFECT_WINDOW_MS) {
+                            rafRef.current = requestAnimationFrame(animate)
                         }
                     };
 
@@ -173,12 +179,19 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     Math.pow(cursorPos.y - incomingPitch.final_y, 2)
                 );
 
+                const verticalOffset = cursorPos.y - incomingPitch.final_y;
+
                 const isHit = distance <= hitZone;
+
+                const hitTrajectory = getTrajectory(verticalOffset, hitZone);
+
                 const hitType = isHit
                     ? determineHitType(
                         distance,
                         hitZone,
+                        hitTrajectory,
                         timingOffset,
+                        reactionTimeRef.current,
                         effectiveSpeed,
                         incomingPitch.power, selected
                     )
@@ -253,6 +266,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         top: ballPos.y - BALL_DISPLAY_SIZE / 2,
                         backgroundImage: `url('${ballSpriteSheet}')`,
                         backgroundRepeat: 'no-repeat',
+                        filter: isPerfectWindow 
+                            ? `brightness(1.4)`
+                            : `brightness(0.8)`,
                     }}
                 />
             )}
