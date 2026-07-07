@@ -6,6 +6,7 @@ Let trajectory influence total before hitType is decided — instead of overridi
 This feels more "physically simulated" but is a bigger change to determineHitType's internals.
 */
 
+export const PERFECT_WINDOW_MS = 40;
 
 export function getTrajectory(verticalOffset, radius) {
     const threshold = radius * 0.3;
@@ -27,8 +28,8 @@ export function getTimingQuality(timingOffset, reactionTime) {
     const adjusted = timingOffset - reactionTime;
 
     if (adjusted < -120) return "very_early";
-    if (adjusted < -40) return "early";
-    if (adjusted < 40) return "perfect";
+    if (adjusted < -PERFECT_WINDOW_MS) return "early";
+    if (adjusted < PERFECT_WINDOW_MS) return "perfect";
     if (adjusted < 120) return "late";
     return "very_late";
 }
