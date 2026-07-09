@@ -7,6 +7,7 @@ This feels more "physically simulated" but is a bigger change to determineHitTyp
 */
 
 export const PERFECT_WINDOW_MS = 40;
+export const BALL_HIT_RADIUS = 12;
 
 export function getTrajectory(verticalOffset, radius) {
     const threshold = radius * 0.3;

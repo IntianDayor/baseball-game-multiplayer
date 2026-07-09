@@ -3,7 +3,7 @@ import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType, effectivePitchSpeed, getTrajectory, PERFECT_WINDOW_MS } from "../lib/engines/hit-calculator";
+import { determineHitType, effectivePitchSpeed, getTrajectory, getTimingQuality, BALL_HIT_RADIUS } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
 
@@ -12,6 +12,11 @@ const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 const calcReactionTime = (effectiveSpeed) =>
     Math.round((10 - effectiveSpeed) * 200 + 500);
+
+// For Ball Sprite
+const HITTABLE_GLOW_MS = 150;
+const MIN_HINT_MS = 400;
+const MAX_HINT_MS = 500;
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     /* VARIABLES */
@@ -24,7 +29,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [canSwing, setCanSwing] = useState(false);
     const [pitchStartTime, setPitchStartTime] = useState(null);
     const [isBallFlying, setIsBallFlying] = useState(false);
-    const [isPerfectWindow, setIsPerfectWindow] = useState(false);
+    const [timingQuality, setTimingQuality] = useState(null);
+    const [hintShrinking, setHintShrinking] = useState(false);
 
     // Contact Point Visualizer Variables // 
     const hitZone = bats[selected].radius;
@@ -39,10 +45,12 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const rafRef = useRef(null);
     const animStartTimeRef = useRef(null);
     const incomingPitchRef = useRef(null);
+    const hintShrinkingRef = useRef(null);
 
     // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 })
     const [frameIndex, setFrameIndex] = useState(0);
+    const [isHittableWindow, setIsHittableWindow] = useState(false);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -70,10 +78,14 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 });
                 setSwingResult(null);
                 setPitchTaken(false);
+                setHintShrinking(false);
+                setTimingQuality(null);
+
+                hintShrinkingRef.current = setTimeout(() => setHintShrinking(true), 20);
 
                 // Shows hint first then after short delay canSwing is true
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
-                hintDurationRef.current = readDelay;
+                hintDurationRef.current = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
 
                 if (readDelayRef.current) clearTimeout(readDelayRef.current);
 
@@ -84,17 +96,17 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     setIsBallFlying(true);
                     setPitchStartTime(Date.now());
                     isBallFlyingRef.current = true;
-                    
+
                     // ANIMATION
                     const animate = () => {
                         if (!isBallFlyingRef.current) return;
 
                         const now = Date.now();
-                        
+
                         const elapsed = now - animStartTimeRef.current;
                         const t = clamp((now - animStartTimeRef.current) / reactionTimeRef.current, 0, 1);
 
-                        setIsPerfectWindow(Math.abs(elapsed - reactionTimeRef.current) <= PERFECT_WINDOW_MS);
+                        setIsHittableWindow(Math.abs(elapsed - reactionTimeRef.current) <= HITTABLE_GLOW_MS);
 
                         let breakProgress = clamp(
                             (t - pitchData.breakTiming) / (1 - pitchData.breakTiming),
@@ -111,7 +123,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         setFrameIndex(getFrames(t, 32));
 
-                        if (elapsed < reactionTimeRef.current + PERFECT_WINDOW_MS) {
+                        if (elapsed < reactionTimeRef.current + HITTABLE_GLOW_MS) {
                             rafRef.current = requestAnimationFrame(animate)
                         }
                     };
@@ -124,6 +136,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         return () => {
             if (readDelayRef.current) clearTimeout(readDelayRef.current);
+            if (hintShrinkingRef.current) clearTimeout(hintShrinkingRef.current);
             supabase.removeChannel(channel);
         };
     }, [roomCode, pitches]);
@@ -168,172 +181,171 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
     }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
 
-    // HINT ANIMATION
-    const totalHintDuration = (hintDurationRef.current ?? 0) + (reactionTimeRef.current ?? 0);
-
     // Pitch Set fetching guard
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
     return (
-        <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
-            onMouseMove={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setCursorPos({
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top
-                });
-            }}
-
-            // Batting Logic //
-            onClick={async () => {
-
-                if (!canSwing || !incomingPitch || !pitchStartTime) return;
-
-                const pitchData = pitches[incomingPitch.pitch_type];
-                const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
-
-                const swingAtTime = Date.now();
-                setCanSwing(false);
-
-                const timingOffset = swingAtTime - pitchStartTime;
-
-                clearTimeout(autoTakeTimerRef.current);
-
-                const distance = Math.sqrt(
-                    Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
-                    Math.pow(cursorPos.y - incomingPitch.final_y, 2)
-                );
-
-                const verticalOffset = cursorPos.y - incomingPitch.final_y;
-
-                const isHit = distance <= hitZone;
-
-                const hitTrajectory = getTrajectory(verticalOffset, hitZone);
-
-                const hitType = isHit
-                    ? determineHitType(
-                        distance,
-                        hitZone,
-                        hitTrajectory,
-                        timingOffset,
-                        reactionTimeRef.current,
-                        effectiveSpeed,
-                        incomingPitch.power, selected
-                    )
-                    : null;
-
-                // Roll fielder if it's a hit and not a foul
-                let finalResult = isHit ? hitType : 'swing_miss'
-                if (
-                    isHit &&
-                    ['single', 'double', 'homerun'].includes(hitType)
-                ) {
-                    const fielderRoll = rollFielder(hitType, selected);
-                    finalResult = fielderRoll.result;
-                }
-
-                // After Swing
-                setSwingResult(finalResult);
-                setLastPitchLocation({
-                    x: incomingPitch.final_x,
-                    y: incomingPitch.final_y
-                });
-                setHint(null);
-                setIsBallFlying(false);
-                isBallFlyingRef.current = false;
-
-                if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-                await swingAt(incomingPitch.id, roomCode, {
-                    swing_x: cursorPos.x,
-                    swing_y: cursorPos.y,
-                    swing_type: selected,
-                    result: finalResult
-                });
-                await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
-            }}
-        >
-
-            {/* Contact point - Testing */}
-            <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
-                style={{
-                    width: `${hitZone * 2}px`,
-                    height: `${hitZone * 2}px`,
-                    left: cursorPos.x - hitZone,
-                    top: cursorPos.y - hitZone,
+        <>
+            <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
+                onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    setCursorPos({
+                        x: e.clientX - rect.left,
+                        y: e.clientY - rect.top
+                    });
                 }}
-            />
 
-            {/* Hint Area */}
-            {hint && incomingPitch && (
-                <div
-                    className={`absolute rounded-full border-2 pointer-events-none ${canSwing ? 'border-green-400' : 'border-white'}`}
+                // Batting Logic //
+                onClick={async () => {
+
+                    if (!canSwing || !incomingPitch || !pitchStartTime) return;
+
+                    const pitchData = pitches[incomingPitch.pitch_type];
+                    const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+
+                    const swingAtTime = Date.now();
+                    setCanSwing(false);
+
+                    const timingOffset = swingAtTime - pitchStartTime;
+
+                    setTimingQuality(getTimingQuality(timingOffset, reactionTimeRef.current));
+
+                    clearTimeout(autoTakeTimerRef.current);
+
+                    const distance = Math.sqrt(
+                        Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
+                        Math.pow(cursorPos.y - incomingPitch.final_y, 2)
+                    );
+
+                    const verticalOffset = cursorPos.y - incomingPitch.final_y;
+
+                    const isHit = distance <= hitZone;
+
+                    const hitTrajectory = getTrajectory(verticalOffset, hitZone);
+
+                    const hitType = isHit
+                        ? determineHitType(
+                            distance,
+                            hitZone,
+                            hitTrajectory,
+                            timingOffset,
+                            reactionTimeRef.current,
+                            effectiveSpeed,
+                            incomingPitch.power, selected
+                        )
+                        : null;
+
+                    // Roll fielder if it's a hit and not a foul
+                    let finalResult = isHit ? hitType : 'swing_miss'
+                    if (
+                        isHit &&
+                        ['single', 'double', 'homerun'].includes(hitType)
+                    ) {
+                        const fielderRoll = rollFielder(hitType, selected);
+                        finalResult = fielderRoll.result;
+                    }
+
+                    // After Swing
+                    setSwingResult(finalResult);
+                    setLastPitchLocation({
+                        x: incomingPitch.final_x,
+                        y: incomingPitch.final_y
+                    });
+                    setHint(null);
+                    setIsBallFlying(false);
+                    isBallFlyingRef.current = false;
+
+                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+                    await swingAt(incomingPitch.id, roomCode, {
+                        swing_x: cursorPos.x,
+                        swing_y: cursorPos.y,
+                        swing_type: selected,
+                        result: finalResult
+                    });
+                    await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
+                }}
+            >
+
+                {/* Contact point - Testing */}
+                <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                     style={{
-                        width: isBallFlying ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
-                        height: isBallFlying ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
-                        left: isBallFlying
-                            ? incomingPitch.final_x - 10
-                            : hint.hint_x - (hint.breakScale ?? 8) * 2,
-                        top: isBallFlying
-                            ? incomingPitch.final_y - 10
-                            : hint.hint_y - (hint.breakScale ?? 8) * 2,
-                        opacity: isBallFlying ? 0 : 1,
-                        transition: `
-                            width ${totalHintDuration}ms ease-in, 
-                            height ${totalHintDuration}ms ease-in, 
-                            left ${totalHintDuration}ms ease-in, 
-                            top ${totalHintDuration}ms ease-in, 
-                            opacity ${totalHintDuration}ms ease-in
+                        width: `${hitZone * 2}px`,
+                        height: `${hitZone * 2}px`,
+                        left: cursorPos.x - hitZone,
+                        top: cursorPos.y - hitZone,
+                    }}
+                />
+
+                {/* Hint Area */}
+                {hint && incomingPitch && (
+                    <div
+                        className={"absolute rounded-full border-2 pointer-events-none border-white"}
+                        style={{
+                            width: hintShrinking ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
+                            height: hintShrinking ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
+                            left: hint.hint_x - (hint.breakScale ?? 8) * 2,
+                            top: hint.hint_y - (hint.breakScale ?? 8) * 2,
+                            opacity: hintShrinking ? 0 : 1,
+                            transition: `
+                            width ${hintDurationRef.current}ms ease-in, 
+                            height ${hintDurationRef.current}ms ease-in, 
+                            left ${hintDurationRef.current}ms ease-in, 
+                            top ${hintDurationRef.current}ms ease-in, 
+                            opacity ${hintDurationRef.current}ms ease-in
                             `,
-                    }}
-                />
-            )}
+                        }}
+                    />
+                )}
 
-            {/* Ball Sprite */}
-            {isBallFlying && (
-                <div
-                    className="absolute pointer-events-none"
-                    style={{
-                        ...getScaledSpritePosition(frameIndex, 128, BALL_DISPLAY_SIZE, 8, 4),
-                        left: ballPos.x - BALL_DISPLAY_SIZE / 2,
-                        top: ballPos.y - BALL_DISPLAY_SIZE / 2,
-                        backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
-                        backgroundRepeat: 'no-repeat',
-                        filter: isPerfectWindow 
-                            ? `brightness(1.4)`
-                            : `brightness(0.8)`,
-                    }}
-                />
-            )}
+                {/* Ball Sprite */}
+                {isBallFlying && (
+                    <div
+                        className="absolute pointer-events-none"
+                        style={{
+                            ...getScaledSpritePosition(frameIndex, 128, BALL_DISPLAY_SIZE, 8, 4),
+                            left: ballPos.x - BALL_DISPLAY_SIZE / 2,
+                            top: ballPos.y - BALL_DISPLAY_SIZE / 2,
+                            backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
+                            backgroundRepeat: 'no-repeat',
+                            filter: isHittableWindow
+                                ? `brightness(1.0)`
+                                : `brightness(0.5)`,
+                        }}
+                    />
+                )}
 
-            {/* Last Pitch location */}
-            <LastPitchVisual location={lastPitchLocation} />
+                {/* Last Pitch location */}
+                <LastPitchVisual location={lastPitchLocation} />
 
-            {/* Temp Bat Visual */}
-            {swingResult && (
-                <div className={`absolute top-2 left-2 text-sm font-bold ${['single', 'double', 'homerun'].includes(swingResult) ? 'text-green-400' : 'text-red-400'
-                    }`}>
-                    {swingResult === 'homerun' && 'HOMERUN!'}
-                    {swingResult === 'double' && 'DOUBLE!'}
-                    {swingResult === 'single' && 'SINGLE!'}
-                    {swingResult === 'out' && 'OUT!'}
-                    {swingResult === 'swing_miss' && 'MISS!'}
-                    {swingResult === 'foul' && 'FOUL!'}
-                    {swingResult === 'sac_bunt' && 'SACRIFICIAL BUNT!'}
+                {/* Temp Bat Visual */}
+                {swingResult && (
+                    <div className={`absolute top-2 left-2 text-sm font-bold ${['single', 'double', 'homerun'].includes(swingResult) ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                        {swingResult === 'homerun' && 'HOMERUN!'}
+                        {swingResult === 'double' && 'DOUBLE!'}
+                        {swingResult === 'single' && 'SINGLE!'}
+                        {swingResult === 'out' && 'OUT!'}
+                        {swingResult === 'swing_miss' && 'MISS!'}
+                        {swingResult === 'foul' && 'FOUL!'}
+                        {swingResult === 'sac_bunt' && 'SACRIFICIAL BUNT!'}
+                    </div>
+                )}
+                {pitchTaken && (
+                    <div className="absolute top-10 left-2 text-sm font-bold text-blue-400">
+                        {incomingPitch.is_strike ? 'CALLED STRIKE!' : 'BALL!'}
+                    </div>
+                )}
+
+                {/* Strike Zone */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                    < StrikeZone pitches={pitches} selected={selected} />
                 </div>
-            )}
-            {pitchTaken && (
-                <div className="absolute top-10 left-2 text-sm font-bold text-blue-400">
-                    {incomingPitch.is_strike ? 'CALLED STRIKE!' : 'BALL!'}
-                </div>
-            )}
 
-            {/* Strike Zone */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                < StrikeZone pitches={pitches} selected={selected} />
             </div>
-
-        </div>
+            {/* Temp Bat timing teller */}
+            <div className="text-white text-xs text-center">{timingQuality}</div>
+        </>
     );
 }
 
