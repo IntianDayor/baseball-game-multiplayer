@@ -151,6 +151,7 @@ export async function throwPitch(roomCode, pitchData) {
             hint_x: pitchData.hint_x,
             hint_y: pitchData.hint_y,
             break_scale: pitchData.break_scale,
+            movement_scale: pitchData.movement_scale,
             power: pitchData.power,
             pitch_type: pitchData.pitch_type,
             is_strike: pitchData.is_strike,

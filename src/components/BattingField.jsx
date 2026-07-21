@@ -66,7 +66,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             }, (payload) => {
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
-                const effectiveSpeed = effectivePitchSpeed(pitchData.speed, pitch.power)
+                const effectiveSpeed = effectivePitchSpeed(pitchData.speed)
                 const reactionTime = calcReactionTime(effectiveSpeed);
                 reactionTimeRef.current = reactionTime;
                 setIncomingPitch(pitch);
@@ -146,7 +146,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         if (!canSwing || !incomingPitch || !hint) return;
 
         const pitchData = pitches[incomingPitch.pitch_type];
-        const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
         const reactionTime = calcReactionTime(effectiveSpeed);
         reactionTimeRef.current = reactionTime;
 
@@ -201,7 +201,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     if (!canSwing || !incomingPitch || !pitchStartTime) return;
 
                     const pitchData = pitches[incomingPitch.pitch_type];
-                    const effectiveSpeed = effectivePitchSpeed(pitchData.speed, incomingPitch.power);
+                    const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
 
                     const swingAtTime = Date.now();
                     setCanSwing(false);
@@ -231,7 +231,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             timingOffset,
                             reactionTimeRef.current,
                             effectiveSpeed,
-                            incomingPitch.power, selected
+                            incomingPitch.movement_scale, 
+                            selected,
                         )
                         : null;
 

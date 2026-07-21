@@ -1,3 +1,9 @@
+/* MATH FUNCTIONS */
+const MIN_POWER_FACTOR = 0.75;
+const MAX_POWER_FACTOR = 1.6;
+const MIN_SPREAD_FACTOR = 0.8;
+const MAX_SPREAD_FACTOR = 1.8;
+
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
 }
@@ -12,10 +18,8 @@ function resolveBreak(breakX, breakY) {
   return { bx, by };
 }
 
-export function resolvePitchLocation(pitch) {
+export function resolvePitchLocation(pitch, {aim_x, aim_y, power = 0}) {
   const {
-    aim_x,
-    aim_y,
     breakX = 0,
     breakY = 0,
     speed = 5,
@@ -23,36 +27,37 @@ export function resolvePitchLocation(pitch) {
     disguised = false,
   } = pitch;
 
-  // BREAK RESOLUTION
+  // BREAK RESOLUTION //
   const { bx, by } = resolveBreak(breakX, breakY);
 
   const breakMagnitude = Math.sqrt(bx * bx + by * by);
 
-  // MOVEMENT MODEL (core physics)
-  const movementScale = 4 + breakMagnitude * 1.8;
+  const powerFactor = MIN_POWER_FACTOR + (power / 4) * (MAX_POWER_FACTOR - MIN_POWER_FACTOR);
+  const powerSpreadFactor = MIN_SPREAD_FACTOR + (power / 4) * (MAX_SPREAD_FACTOR - MIN_SPREAD_FACTOR);
+
+  // MOVEMENT MODEL (core physics) //
+  const movementScale = (4 + breakMagnitude * 1.8) * powerFactor;
 
   const moveX = bx * movementScale;
   const moveY = by * movementScale;
 
-  // CONTROL / ACCURACY MODEL
+  // CONTROL / ACCURACY MODEL //
   const speedFactor = clamp(speed / 10, 0.25, 1);
 
   let controlSpread = clamp(16 * (1 - speedFactor), 3, 14);
-
-  // chaos overrides control
   if (chaos) controlSpread = 30;
-
-  // disguise slightly reduces readable accuracy
   if (disguised) controlSpread *= 1.2;
+
+  controlSpread *= powerSpreadFactor;
 
   const noiseX = randomRange(-controlSpread, controlSpread);
   const noiseY = randomRange(-controlSpread, controlSpread);
 
-  // FINAL BALL POSITION
+  // FINAL BALL POSITION //
   const final_x = aim_x + moveX + noiseX;
   const final_y = aim_y + moveY + noiseY;
 
-  // HINT SYSTEM
+  // HINT SYSTEM //
   const hintBias = 0.25; // how close hint is to real movement
 
   const predictedX = aim_x + moveX * hintBias;
@@ -75,5 +80,6 @@ export function resolvePitchLocation(pitch) {
     final_x,
     final_y,
     breakScale: hintRadius,
+    movementScale
   };
 }

@@ -6,8 +6,11 @@ Let trajectory influence total before hitType is decided — instead of overridi
 This feels more "physically simulated" but is a bigger change to determineHitType's internals.
 */
 
+/* MATH VARIABLES */
 export const PERFECT_WINDOW_MS = 40;
 export const BALL_HIT_RADIUS = 12;
+const MEATBALL_THRESHOLD = 10;
+const MEATBALL_MULTIPLIER = 3;
 
 export function getTrajectory(verticalOffset, radius) {
     const threshold = radius * 0.3;
@@ -61,13 +64,13 @@ function applyTimingModifier(baseResult, timingQuality) {
 }
 
 // TODO: Something using PitchSpeed
-export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, pitchPower, swingType) {
+export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, movementScale, swingType) {
 
     const quality = getContactQuality(distance, radius);
 
     const distanceScore = Math.max(0, 100 - (distance * 3));
 
-    const meatballBonus = Math.max(0, 20 - pitchPower);
+    const meatballBonus = Math.max(0, (MEATBALL_THRESHOLD - movementScale) * MEATBALL_MULTIPLIER);
 
     const total = distanceScore + meatballBonus;
 
@@ -110,8 +113,8 @@ export function determineHitType(distance, radius, trajectory, timingOffset, rea
 
     return applyTimingModifier(baseResult, timingQuality);
 }
+// TODO: Something with pitch speed
+export function effectivePitchSpeed(baseSpeed) {
 
-export function effectivePitchSpeed(baseSpeed, power) {
-
-    return baseSpeed * 0.5 + baseSpeed * 0.5 * (power / 100);
+    return baseSpeed;
 }
