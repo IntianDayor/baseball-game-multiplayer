@@ -1,6 +1,6 @@
 # Game Mechanics Math Reference
 
-This document captures the core math formulas used by the baseball game simulation so they can be tuned for balance.
+This document reflects the current implementation in the game engine rather than an earlier design draft. The formulas below match the logic in the pitch resolver, hit calculator, count engine, walk engine, inning engine, and fielder engine.
 
 ## 1. Pitch Movement and Location
 
@@ -9,10 +9,10 @@ This document captures the core math formulas used by the baseball game simulati
 Break values are either fixed or sampled randomly.
 
 - Random break value:
-  - $bx = \text{random}( -4, 4 )$
-  - $by = \text{random}( -4, 4 )$
+  - $bx = \text{random}(-4, 4)$
+  - $by = \text{random}(-4, 4)$
 
-- If the pitch has fixed break values, those values are used directly.
+- If the pitch uses fixed break values, those values are used directly.
 
 ### 1.2 Break magnitude
 
@@ -22,7 +22,7 @@ The total break strength is the Euclidean magnitude of the break vector:
 
 ### 1.3 Power factor
 
-Power scales the movement intensity between minimum and maximum values:
+Power scales the movement intensity between the minimum and maximum factors:
 
 - $powerFactor = 0.75 + \left(\frac{power}{4}\right) \times (1.6 - 0.75)$
 
@@ -43,7 +43,7 @@ The movement scale combines break strength and power:
 The resulting movement in each axis is:
 
 - $moveX = bx \times movementScale$
-- $moveY = by \times movementScale$
+- $moveY = -by \times movementScale$
 
 ### 1.7 Control and accuracy noise
 
@@ -63,6 +63,10 @@ Disguise slightly increases the spread:
 
 - $controlSpread = controlSpread \times 1.2$ if $disguised = true$
 
+The spread is then multiplied by the power spread factor:
+
+- $controlSpread = controlSpread \times powerSpreadFactor$
+
 Random noise is added to the target location:
 
 - $noiseX = randomRange(-controlSpread, controlSpread)$
@@ -77,7 +81,7 @@ The final ball position is:
 
 ### 1.9 Hint prediction
 
-The hint location is a reduced version of the real movement:
+The hint position uses a reduced version of the real movement:
 
 - $predictedX = aim_x + moveX \times 0.25$
 - $predictedY = aim_y + moveY \times 0.25$
@@ -128,12 +132,15 @@ Timing quality compares the swing timing error to a reaction-time adjustment.
 Then:
 
 - If $adjusted < -120$, result is $very\_early$
-- If $adjusted < -40$, result is $early$
-- If $adjusted < 40$, result is $perfect$
+- If $adjusted < -60$, result is $early$
+- If $adjusted < 60$, result is $perfect$
 - If $adjusted < 120$, result is $late$
 - Otherwise, result is $very\_late$
 
-Here, $PERFECT_WINDOW_MS = 40$.
+The current implementation uses:
+
+- $PERFECT\_WINDOW\_MS = 60$
+- $VERY\_LATE\_THRESHOLD\_MS = 120$
 
 ---
 
@@ -147,13 +154,15 @@ The hit distance contributes a base score:
 
 ### 5.2 Meatball bonus
 
-Lower pitch power increases the chance of a weak contact result:
+A weak-contact bonus is derived from movement scale rather than pitch power:
 
-- $meatballBonus = max(0, 20 - pitchPower)$
+- $MEATBALL\_THRESHOLD = 10$
+- $MEATBALL\_MULTIPLIER = 3$
+- $meatballBonus = max(0, (MEATBALL\_THRESHOLD - movementScale) \times MEATBALL\_MULTIPLIER)$
 
 ### 5.3 Total contact score
 
-The total score used for hit outcome decisions is:
+The score used for hit outcome decisions is:
 
 - $total = distanceScore + meatballBonus$
 
@@ -219,13 +228,11 @@ If timing is perfect, no modifier is applied.
 
 ## 7. Effective Pitch Speed
 
-Pitch speed is adjusted by power:
+The current implementation does not apply the older power-based pitch-speed scaling formula. In the live code, the function simply returns the incoming base speed unchanged:
 
-- $effectivePitchSpeed = baseSpeed \times 0.5 + baseSpeed \times 0.5 \times \left(\frac{power}{100}\right)$
+- $effectivePitchSpeed(baseSpeed) = baseSpeed$
 
-This is equivalent to:
-
-- $effectivePitchSpeed = baseSpeed \times \left(0.5 + 0.005 \times power\right)$
+This is a placeholder and is not currently used to alter pitch behavior.
 
 ---
 
@@ -276,13 +283,15 @@ For $out$ or $sac\_bunt$:
 
 ## 9. Walk Logic
 
-A walk only occurs if the batter has accumulated 4 balls:
+Walks are handled by a separate engine. The current behavior is:
 
 - If $balls < 4$, no state change occurs
 - If $balls \ge 4$:
   - $balls = 0$
   - $strikes = 0$
   - result becomes $walk$
+
+The current implementation does not advance runners as part of the walk logic.
 
 ---
 
@@ -299,6 +308,8 @@ Then the inning frame advances:
 
 - If $inningFrame = bottom$, then $inning = inning + 1$ and $inningFrame = top$
 - Otherwise, $inningFrame = bottom$
+
+This is implemented in the inning engine with $outs \ge 3$.
 
 ---
 
