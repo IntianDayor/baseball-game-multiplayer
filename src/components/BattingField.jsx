@@ -3,20 +3,40 @@ import StrikeZone from "./StrikeZone";
 import LastPitchVisual from "./LastPitchVisual";
 import { supabase } from "../lib/supabase";
 import { swingAt, updateGameState } from "../lib/rooms";
-import { determineHitType, effectivePitchSpeed, getTrajectory, getTimingQuality, BALL_HIT_RADIUS } from "../lib/engines/hit-calculator";
+import {
+    determineHitType,
+    effectivePitchSpeed,
+    getTrajectory,
+    getTimingQuality,
+    BALL_HIT_RADIUS,
+    VERY_LATE_THRESHOLD_MS
+} from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
 import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
 
 /* MATH FUNCTIONS */
-const lerp = (a, b, t) => a + (b - a) * t;
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-const calcReactionTime = (effectiveSpeed) =>
-    Math.round((10 - effectiveSpeed) * 200 + 500);
 
 // For Ball Sprite
+const MIN_REACTION_MS = 1000;
+const MAX_REACTION_MS = 2000;
+const MIN_PITCH_SPEED = 2;
+const MAX_PITCH_SPEED = 10;
 const HITTABLE_GLOW_MS = 150;
 const MIN_HINT_MS = 400;
 const MAX_HINT_MS = 500;
+const LATE_SWING_BUFFER_MS = 100; // Cushion
+
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+const calcReactionTime = (effectiveSpeed) => {
+    const speedT = clamp(
+        (effectiveSpeed - MIN_PITCH_SPEED) / (MAX_PITCH_SPEED - MIN_PITCH_SPEED),
+        0, 1
+    );
+
+    return Math.round(lerp(MAX_REACTION_MS, MIN_REACTION_MS, speedT));
+}
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     /* VARIABLES */
@@ -48,8 +68,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const hintShrinkingRef = useRef(null);
 
     // Animation Variable
-    const [ballPos, setBallPos] = useState({ x: 0, y: 0 })
+    const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
     const [frameIndex, setFrameIndex] = useState(0);
+    const [glowBrightness, setGlowBrightness] = useState(0);
     const [isHittableWindow, setIsHittableWindow] = useState(false);
 
     // Pitch Listener / Hint Visualizer
@@ -106,6 +127,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         const elapsed = now - animStartTimeRef.current;
                         const t = clamp((now - animStartTimeRef.current) / reactionTimeRef.current, 0, 1);
 
+                        const openAt = 1 - (VERY_LATE_THRESHOLD_MS / reactionTimeRef.current);
+                        const glowProgress = clamp(t / openAt, 0, 1) ** 1.5;
+
+                        setGlowBrightness(lerp(0.5, 1.0, glowProgress));
+
                         setIsHittableWindow(Math.abs(elapsed - reactionTimeRef.current) <= HITTABLE_GLOW_MS);
 
                         let breakProgress = clamp(
@@ -150,6 +176,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         const reactionTime = calcReactionTime(effectiveSpeed);
         reactionTimeRef.current = reactionTime;
 
+        const autoTakeDelay = reactionTime + VERY_LATE_THRESHOLD_MS + LATE_SWING_BUFFER_MS;
+
         autoTakeTimerRef.current = setTimeout(async () => {
 
             setCanSwing(false)
@@ -175,7 +203,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
             await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
 
-        }, reactionTime);
+        }, autoTakeDelay);
 
         return () => clearTimeout(autoTakeTimerRef.current);
 
@@ -231,7 +259,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             timingOffset,
                             reactionTimeRef.current,
                             effectiveSpeed,
-                            incomingPitch.movement_scale, 
+                            incomingPitch.movement_scale,
                             selected,
                         )
                         : null;
@@ -309,9 +337,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             top: ballPos.y - BALL_DISPLAY_SIZE / 2,
                             backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
                             backgroundRepeat: 'no-repeat',
-                            filter: isHittableWindow
-                                ? `brightness(1.0)`
-                                : `brightness(0.5)`,
+                            filter: `brightness(${glowBrightness})${isHittableWindow ? ' drop-shadow(0 0 6px white)' : ''}`,
                         }}
                     />
                 )}

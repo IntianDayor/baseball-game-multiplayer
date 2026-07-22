@@ -7,8 +7,9 @@ This feels more "physically simulated" but is a bigger change to determineHitTyp
 */
 
 /* MATH VARIABLES */
-export const PERFECT_WINDOW_MS = 40;
+export const PERFECT_WINDOW_MS = 60;
 export const BALL_HIT_RADIUS = 12;
+export const VERY_LATE_THRESHOLD_MS = 120;
 const MEATBALL_THRESHOLD = 10;
 const MEATBALL_MULTIPLIER = 3;
 
@@ -31,10 +32,10 @@ function getContactQuality(distance, radius) {
 export function getTimingQuality(timingOffset, reactionTime) {
     const adjusted = timingOffset - reactionTime;
 
-    if (adjusted < -120) return "very_early";
+    if (adjusted < -VERY_LATE_THRESHOLD_MS) return "very_early";
     if (adjusted < -PERFECT_WINDOW_MS) return "early";
     if (adjusted < PERFECT_WINDOW_MS) return "perfect";
-    if (adjusted < 120) return "late";
+    if (adjusted < VERY_LATE_THRESHOLD_MS) return "late";
     return "very_late";
 }
 

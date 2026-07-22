@@ -39,7 +39,7 @@ export function resolvePitchLocation(pitch, {aim_x, aim_y, power = 0}) {
   const movementScale = (4 + breakMagnitude * 1.8) * powerFactor;
 
   const moveX = bx * movementScale;
-  const moveY = by * movementScale;
+  const moveY = -by * movementScale;
 
   // CONTROL / ACCURACY MODEL //
   const speedFactor = clamp(speed / 10, 0.25, 1);
