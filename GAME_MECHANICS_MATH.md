@@ -36,14 +36,17 @@ Spread also scales with power:
 
 The movement scale combines break strength and power:
 
-- $movementScale = (4 + breakMagnitude \times 1.8) \times powerFactor$
+- $movementScale = (4 + breakMagnitude \times 0.5) \times powerFactor$
 
 ### 1.6 Ball movement offsets
 
 The resulting movement in each axis is:
 
-- $moveX = bx \times movementScale$
-- $moveY = -by \times movementScale$
+- $moveX = clamp(bx \times movementScale, -50, 50)$
+- $moveY = clamp(-by \times movementScale, -50, 50)$
+
+The $50$ px cap applies independently to each axis, preventing high-break
+pitches from resolving outside the playable field solely because of movement.
 
 ### 1.7 Control and accuracy noise
 
@@ -162,9 +165,20 @@ A weak-contact bonus is derived from movement scale rather than pitch power:
 
 ### 5.3 Total contact score
 
-The score used for hit outcome decisions is:
+The score starts as:
 
 - $total = distanceScore + meatballBonus$
+
+Pitch speed then rewards clean contact against faster pitches and penalizes bad
+contact against them. With:
+
+- $speedDelta = max(0, pitchSpeed - 6)$
+
+the final score is:
+
+- $total = total + speedDelta \times 3$ for $perfect$ or $good$ contact
+- $total = total - speedDelta \times 4$ for $bad$ contact
+- $total$ is unchanged for other contact qualities
 
 ### 5.4 Swing-type thresholds
 
@@ -228,11 +242,22 @@ If timing is perfect, no modifier is applied.
 
 ## 7. Effective Pitch Speed
 
-The current implementation does not apply the older power-based pitch-speed scaling formula. In the live code, the function simply returns the incoming base speed unchanged:
+Pitch power does not scale speed. The effective speed is the selected pitch's
+base speed:
 
 - $effectivePitchSpeed(baseSpeed) = baseSpeed$
 
-This is a placeholder and is not currently used to alter pitch behavior.
+It drives the batter's timing window. For speeds $2$ through $10$:
+
+- $speedT = clamp\left(\frac{effectiveSpeed - 2}{10 - 2}, 0, 1\right)$
+- $reactionTime = round(2000 + (1000 - 2000) \times speedT)$ ms
+
+The ball arrives at this reaction time, and timing quality is measured against
+that arrival point. The pre-pitch hint delay is also speed-based before being
+limited to $400$--$500$ ms:
+
+- $readDelay = round((10 - effectiveSpeed) \times 100 + 200)$ ms
+- $hintDuration = clamp(readDelay, 400, 500)$ ms
 
 ---
 
@@ -291,11 +316,27 @@ Walks are handled by a separate engine. The current behavior is:
   - $strikes = 0$
   - result becomes $walk$
 
-The current implementation does not advance runners as part of the walk logic.
+The runner engine runs immediately afterwards. A walk forces runners only as
+needed: the batter takes first; each occupied base pushes its runner one base;
+and a bases-loaded walk scores exactly one run.
 
 ---
 
-## 10. Inning Progression
+## 10. Runner Advancement
+
+Runner resolution occurs after the count and walk engines.
+
+- **Single:** runner on third scores; runners on first and second advance one
+  base; batter takes first.
+- **Double:** runners on second and third score; runner on first advances to
+  third; batter takes second.
+- **Home run:** every existing runner plus the batter scores; all bases clear.
+- **Sacrifice bunt:** runner on third scores; runners on first and second
+  advance one base; the batter is out.
+
+---
+
+## 11. Inning Progression
 
 When 3 outs are reached:
 
@@ -313,7 +354,7 @@ This is implemented in the inning engine with $outs \ge 3$.
 
 ---
 
-## 11. Fielder Catch Chance
+## 12. Fielder Catch Chance
 
 The fielder uses a probability threshold:
 
