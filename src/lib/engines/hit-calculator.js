@@ -12,6 +12,9 @@ export const BALL_HIT_RADIUS = 12;
 export const VERY_LATE_THRESHOLD_MS = 120;
 const MEATBALL_THRESHOLD = 10;
 const MEATBALL_MULTIPLIER = 3;
+const SPEED_BASELINE = 6;
+const SPEED_BONUS_PER_POINT = 3;
+const SPEED_PENALTY_PER_POINT = 4;
 
 export function getTrajectory(verticalOffset, radius) {
     const threshold = radius * 0.3;
@@ -64,7 +67,6 @@ function applyTimingModifier(baseResult, timingQuality) {
     return baseResult;
 }
 
-// TODO: Something using PitchSpeed
 export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, movementScale, swingType) {
 
     const quality = getContactQuality(distance, radius);
@@ -73,7 +75,15 @@ export function determineHitType(distance, radius, trajectory, timingOffset, rea
 
     const meatballBonus = Math.max(0, (MEATBALL_THRESHOLD - movementScale) * MEATBALL_MULTIPLIER);
 
-    const total = distanceScore + meatballBonus;
+    let total = distanceScore + meatballBonus;
+
+    const speedDelta = Math.max(0, pitchSpeed - SPEED_BASELINE);
+
+    if (quality === 'perfect' || quality === 'good') {
+        total += speedDelta * SPEED_BONUS_PER_POINT;
+    } else if (quality === 'bad') {
+        total -= speedDelta * SPEED_PENALTY_PER_POINT;
+    }
 
     let timingQuality = getTimingQuality(timingOffset, reactionTime);
 

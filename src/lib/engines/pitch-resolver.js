@@ -3,6 +3,7 @@ const MIN_POWER_FACTOR = 0.75;
 const MAX_POWER_FACTOR = 1.6;
 const MIN_SPREAD_FACTOR = 0.8;
 const MAX_SPREAD_FACTOR = 1.8;
+const MAX_BREAK_PX = 50;
 
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
@@ -36,10 +37,10 @@ export function resolvePitchLocation(pitch, {aim_x, aim_y, power = 0}) {
   const powerSpreadFactor = MIN_SPREAD_FACTOR + (power / 4) * (MAX_SPREAD_FACTOR - MIN_SPREAD_FACTOR);
 
   // MOVEMENT MODEL (core physics) //
-  const movementScale = (4 + breakMagnitude * 1.8) * powerFactor;
+  const movementScale = (4 + breakMagnitude * 0.5) * powerFactor;
 
-  const moveX = bx * movementScale;
-  const moveY = -by * movementScale;
+  const moveX = clamp(bx * movementScale, -MAX_BREAK_PX, MAX_BREAK_PX);
+  const moveY = clamp(-by * movementScale, -MAX_BREAK_PX, MAX_BREAK_PX);
 
   // CONTROL / ACCURACY MODEL //
   const speedFactor = clamp(speed / 10, 0.25, 1);

@@ -13,7 +13,7 @@ export const PITCH_LIBRARY = {
     speed: 9,
     breakX: -2,
     breakY: -2,
-    breakTiming: 0.4,
+    breakTiming: 0.3,
   },
 
   cutter: {
@@ -21,7 +21,7 @@ export const PITCH_LIBRARY = {
     speed: 9,
     breakX: 2,
     breakY: -1,
-    breakTiming: 0.7,
+    breakTiming: 0.55,
   },
 
   sinker: {
@@ -29,7 +29,7 @@ export const PITCH_LIBRARY = {
     speed: 8,
     breakX: -1,
     breakY: -4,
-    breakTiming: 0.6,
+    breakTiming: 0.3,
   },
 
   splitter: {
@@ -37,7 +37,7 @@ export const PITCH_LIBRARY = {
     speed: 7,
     breakX: 0,
     breakY: -6,
-    breakTiming: 0.85,
+    breakTiming: 0.5,
   },
 
   forkball: {
@@ -45,24 +45,24 @@ export const PITCH_LIBRARY = {
     speed: 6,
     breakX: 0,
     breakY: -6,
-    breakTiming: 0.8,
+    breakTiming: 0.45,
   },
 
   changeup: {
     name: "Changeup",
-    speed: 4,
+    speed: 7,
     breakX: 1,
     breakY: -2,
-    breakTiming: 0.3,
+    breakTiming: 0.25,
     disguised: true,
   },
 
   circleChange: {
     name: "Circle Change",
-    speed: 4,
+    speed: 7,
     breakX: -2,
     breakY: -3,
-    breakTiming: 0.5,
+    breakTiming: 0.35,
     disguised: true,
   },
 
@@ -71,7 +71,7 @@ export const PITCH_LIBRARY = {
     speed: 5,
     breakX: 1,
     breakY: -5,
-    breakTiming: 0,
+    breakTiming: 0.15,
   },
 
   knuckleCurve: {
@@ -79,7 +79,7 @@ export const PITCH_LIBRARY = {
     speed: 5,
     breakX: 1,
     breakY: -5,
-    breakTiming: 0.4,
+    breakTiming: 0.25,
   },
 
   slider: {
@@ -87,7 +87,7 @@ export const PITCH_LIBRARY = {
     speed: 7,
     breakX: 4,
     breakY: -2,
-    breakTiming: 0.7,
+    breakTiming: 0.5,
   },
 
   sweeper: {
@@ -95,7 +95,7 @@ export const PITCH_LIBRARY = {
     speed: 6,
     breakX: 6,
     breakY: -1,
-    breakTiming: 0.75,
+    breakTiming: 0.45,
   },
 
   slurve: {
@@ -103,7 +103,7 @@ export const PITCH_LIBRARY = {
     speed: 6,
     breakX: 3,
     breakY: -3,
-    breakTiming: 0.5,
+    breakTiming: 0.35,
   },
 
   screwball: {
@@ -111,7 +111,7 @@ export const PITCH_LIBRARY = {
     speed: 6,
     breakX: -4,
     breakY: -3,
-    breakTiming: 0.5,
+    breakTiming: 0.35,
   },
 
   knuckleball: {
