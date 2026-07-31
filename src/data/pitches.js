@@ -1,3 +1,41 @@
+
+const SPIN_PROFILES = {
+  BACKSPIN: {
+    spinType: "BACKSPIN",
+    spinRate: 1.5,
+    spinDirection: 1,
+    spinJitter: 0,
+  },
+
+  TOPSPIN: {
+    spinType: "TOPSPIN",
+    spinRate: 1.4,
+    spinDirection: 1,
+    spinJitter: 0,
+  },
+
+  SIDESPIN: {
+    spinType: "SIDESPIN",
+    spinRate: 1.5,
+    spinDirection: 1,
+    spinJitter: 0,
+  },
+
+  COMBINED: {
+    spinType: "COMBINED",
+    spinRate: 0.9,
+    spinDirection: 1,
+    spinJitter: 0,
+  },
+
+  UNSTABLE: {
+    spinType: "UNSTABLE",
+    spinRate: 0.2,
+    spinDirection: 1,
+    spinJitter: 25,
+  },
+};
+
 export const PITCH_LIBRARY = {
   fastball: {
     name: "Fastball",
@@ -6,6 +44,9 @@ export const PITCH_LIBRARY = {
     breakY: -1,
     breakTiming: 0,
     fixed: true,
+
+    ...SPIN_PROFILES.BACKSPIN,
+    spinRate: 1.8,
   },
 
   twoSeam: {
@@ -14,6 +55,9 @@ export const PITCH_LIBRARY = {
     breakX: -2,
     breakY: -2,
     breakTiming: 0.3,
+
+    ...SPIN_PROFILES.BACKSPIN,
+    spinRate: 1.6,
   },
 
   cutter: {
@@ -22,6 +66,9 @@ export const PITCH_LIBRARY = {
     breakX: 2,
     breakY: -1,
     breakTiming: 0.55,
+
+    ...SPIN_PROFILES.BACKSPIN,
+    spinRate: 1.7,
   },
 
   sinker: {
@@ -30,6 +77,9 @@ export const PITCH_LIBRARY = {
     breakX: -1,
     breakY: -4,
     breakTiming: 0.3,
+
+    ...SPIN_PROFILES.COMBINED,
+    spinRate: 1.0,
   },
 
   splitter: {
@@ -38,6 +88,10 @@ export const PITCH_LIBRARY = {
     breakX: 0,
     breakY: -6,
     breakTiming: 0.5,
+
+    ...SPIN_PROFILES.COMBINED,
+    spinRate: 0.5,
+    spinJitter: 8,
   },
 
   forkball: {
@@ -46,6 +100,9 @@ export const PITCH_LIBRARY = {
     breakX: 0,
     breakY: -6,
     breakTiming: 0.45,
+
+    ...SPIN_PROFILES.UNSTABLE,
+    spinJitter: 35,
   },
 
   changeup: {
@@ -55,6 +112,9 @@ export const PITCH_LIBRARY = {
     breakY: -2,
     breakTiming: 0.25,
     disguised: true,
+
+    ...SPIN_PROFILES.BACKSPIN,
+    spinRate: 1.1,
   },
 
   circleChange: {
@@ -64,6 +124,9 @@ export const PITCH_LIBRARY = {
     breakY: -3,
     breakTiming: 0.35,
     disguised: true,
+
+    ...SPIN_PROFILES.BACKSPIN,
+    spinRate: 1.1,
   },
 
   curveball: {
@@ -72,6 +135,9 @@ export const PITCH_LIBRARY = {
     breakX: 1,
     breakY: -5,
     breakTiming: 0.15,
+
+    ...SPIN_PROFILES.TOPSPIN,
+    spinRate: 1.5,
   },
 
   knuckleCurve: {
@@ -80,6 +146,10 @@ export const PITCH_LIBRARY = {
     breakX: 1,
     breakY: -5,
     breakTiming: 0.25,
+
+    ...SPIN_PROFILES.TOPSPIN,
+    spinRate: 1.3,
+    spinJitter: 4,
   },
 
   slider: {
@@ -88,6 +158,9 @@ export const PITCH_LIBRARY = {
     breakX: 4,
     breakY: -2,
     breakTiming: 0.5,
+
+    ...SPIN_PROFILES.SIDESPIN,
+    spinRate: 1.5,
   },
 
   sweeper: {
@@ -96,6 +169,9 @@ export const PITCH_LIBRARY = {
     breakX: 6,
     breakY: -1,
     breakTiming: 0.45,
+
+    ...SPIN_PROFILES.SIDESPIN,
+    spinRate: 1.8,
   },
 
   slurve: {
@@ -104,6 +180,9 @@ export const PITCH_LIBRARY = {
     breakX: 3,
     breakY: -3,
     breakTiming: 0.35,
+
+    ...SPIN_PROFILES.COMBINED,
+    spinRate: 1.2,
   },
 
   screwball: {
@@ -112,6 +191,10 @@ export const PITCH_LIBRARY = {
     breakX: -4,
     breakY: -3,
     breakTiming: 0.35,
+
+    ...SPIN_PROFILES.SIDESPIN,
+    spinDirection: -1,
+    spinRate: 1.4,
   },
 
   knuckleball: {
@@ -121,6 +204,10 @@ export const PITCH_LIBRARY = {
     breakY: "random",
     breakTiming: 0,
     chaos: true,
+
+    ...SPIN_PROFILES.UNSTABLE,
+    spinRate: 0.1,
+    spinJitter: 45,
   },
 
   eephus: {
@@ -129,8 +216,11 @@ export const PITCH_LIBRARY = {
     breakX: 0,
     breakY: -1,
     breakTiming: 0,
+
+    ...SPIN_PROFILES.TOPSPIN,
+    spinRate: 0.4,
   },
-}
+};
 
 export function getGamePitches() {
     const fixed = PITCH_LIBRARY.fastball

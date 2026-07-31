@@ -12,7 +12,14 @@ import {
     VERY_LATE_THRESHOLD_MS
 } from "../lib/engines/hit-calculator";
 import { rollFielder } from "../lib/engines/fielder";
-import { getFrames, getScaledSpritePosition, BALL_DISPLAY_SIZE } from "../lib/engines/sprites";
+import {
+    getFrames,
+    getScaledSpritePosition,
+    getSpinRow,
+    BALL_DISPLAY_SIZE,
+    BALL_SPRITE
+} from "../lib/engines/sprites";
+import ballSprite from "../assets/sprite/BaseBallSpriteSheet_PLACEHOLDER3.png";
 
 /* MATH FUNCTIONS */
 
@@ -72,6 +79,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [frameIndex, setFrameIndex] = useState(0);
     const [glowBrightness, setGlowBrightness] = useState(0);
     const [isHittableWindow, setIsHittableWindow] = useState(false);
+    const [spinRow, setSpinRow] = useState(0);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -85,13 +93,19 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 table: 'pitches',
                 filter: `room_id=eq.${roomCode}`
             }, (payload) => {
+
                 const pitch = payload.new;
                 const pitchData = pitches[pitch.pitch_type];
                 const effectiveSpeed = effectivePitchSpeed(pitchData.speed)
                 const reactionTime = calcReactionTime(effectiveSpeed);
                 reactionTimeRef.current = reactionTime;
+
+                setSpinRow(getSpinRow(pitchData.spinType));
+
                 setIncomingPitch(pitch);
+
                 incomingPitchRef.current = pitch;
+
                 setHint({
                     hint_x: pitch.hint_x,
                     hint_y: pitch.hint_y,
@@ -124,33 +138,61 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         const now = Date.now();
 
-                        const elapsed = now - animStartTimeRef.current;
-                        const t = clamp((now - animStartTimeRef.current) / reactionTimeRef.current, 0, 1);
+                        const elapsed =
+                            now - animStartTimeRef.current;
 
-                        const openAt = 1 - (VERY_LATE_THRESHOLD_MS / reactionTimeRef.current);
-                        const glowProgress = clamp(t / openAt, 0, 1) ** 1.5;
-
-                        setGlowBrightness(lerp(0.5, 1.0, glowProgress));
-
-                        setIsHittableWindow(Math.abs(elapsed - reactionTimeRef.current) <= HITTABLE_GLOW_MS);
-
-                        let breakProgress = clamp(
-                            (t - pitchData.breakTiming) / (1 - pitchData.breakTiming),
-                            0, 1
+                        const t = clamp(
+                            elapsed / reactionTimeRef.current,
+                            0,
+                            1
                         );
 
-                        // Ease-in
-                        breakProgress = breakProgress * breakProgress;
+                        // Ball movement //
 
-                        const x = lerp(incomingPitchRef.current.aim_x, incomingPitchRef.current.final_x, breakProgress);
-                        const y = lerp(incomingPitchRef.current.aim_y, incomingPitchRef.current.final_y, breakProgress);
+                        let breakProgress = clamp(
+                            (t - pitchData.breakTiming) /
+                            (1 - pitchData.breakTiming),
+                            0,
+                            1
+                        );
+
+                        breakProgress =
+                            breakProgress * breakProgress;
+
+                        const x = lerp(
+                            incomingPitchRef.current.aim_x,
+                            incomingPitchRef.current.final_x,
+                            breakProgress
+                        );
+
+                        const y = lerp(
+                            incomingPitchRef.current.aim_y,
+                            incomingPitchRef.current.final_y,
+                            breakProgress
+                        );
 
                         setBallPos({ x, y });
 
-                        setFrameIndex(getFrames(t, 32));
+                        // Ball spin //
 
-                        if (elapsed < reactionTimeRef.current + HITTABLE_GLOW_MS) {
-                            rafRef.current = requestAnimationFrame(animate)
+                        const frame = getFrames(
+                            t,
+                            BALL_SPRITE.FRAMES_PER_SPIN,
+                            pitchData.spinRate,
+                            pitchData.spinDirection
+                        );
+
+                        setFrameIndex(frame);
+
+                        // Continue animation //
+
+                        if (
+                            elapsed <
+                            reactionTimeRef.current +
+                            HITTABLE_GLOW_MS
+                        ) {
+                            rafRef.current =
+                                requestAnimationFrame(animate);
                         }
                     };
 
@@ -332,12 +374,34 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     <div
                         className="absolute pointer-events-none"
                         style={{
-                            ...getScaledSpritePosition(frameIndex, 128, BALL_DISPLAY_SIZE, 8, 4),
-                            left: ballPos.x - BALL_DISPLAY_SIZE / 2,
-                            top: ballPos.y - BALL_DISPLAY_SIZE / 2,
-                            backgroundImage: `url('/src/assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER2.png')`,
-                            backgroundRepeat: 'no-repeat',
-                            filter: `brightness(${glowBrightness})${isHittableWindow ? ' drop-shadow(0 0 6px white)' : ''}`,
+                            ...getScaledSpritePosition(
+                                frameIndex,
+                                BALL_SPRITE.SOURCE_FRAME_SIZE,
+                                BALL_DISPLAY_SIZE,
+                                BALL_SPRITE.COLUMNS,
+                                spinRow
+                            ),
+
+                            left:
+                                ballPos.x -
+                                BALL_DISPLAY_SIZE / 2,
+
+                            top:
+                                ballPos.y -
+                                BALL_DISPLAY_SIZE / 2,
+
+                            backgroundImage:
+                                `url(${ballSprite})`,
+
+                            backgroundRepeat: "no-repeat",
+
+                            filter:
+                                `brightness(${glowBrightness})` +
+                                (
+                                    isHittableWindow
+                                        ? " drop-shadow(0 0 6px white)"
+                                        : ""
+                                ),
                         }}
                     />
                 )}
