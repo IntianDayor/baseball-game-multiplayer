@@ -5,7 +5,7 @@ import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
-import Loading from "./Loading";
+import DevSettings from "./DevSettings";
 import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 
@@ -47,6 +47,7 @@ function Game({
     const [balls, setBalls] = useState(0);
     const [inning, setInning] = useState(1);
     const [inningFrame, setInningFrame] = useState('top');
+    const [isDevSettingsOpen, setIsDevSettingsOpen] = useState(false);
 
     // Variables for MainGame //
     const [runners, setRunners] = useState({
@@ -68,6 +69,11 @@ function Game({
                 filter: `id=eq.${roomCode}`
             }, (payload) => {
                 const room = payload.new
+
+                if (room.status === 'gameover') {
+                    setScreen('gameover');
+                    return;
+                }
 
                 /* Role Assignment & Pitch Assignment */
 
@@ -240,6 +246,9 @@ function Game({
     if (role === 'pitcher') return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
 
+            <button onClick={() => setIsDevSettingsOpen(true)} className="absolute bottom-4 left-4 z-10 rounded bg-gray-950/85 px-3 py-2 text-xs font-bold text-amber-300 ring-1 ring-amber-400/60 hover:bg-gray-800">DEV SETTINGS</button>
+            {isDevSettingsOpen && <DevSettings roomCode={roomCode} isHost={isHost} pitches={myPitches} gameState={{ inning, inning_frame: inningFrame, strikes, balls, outs, score_home: scoreHome, score_away: scoreAway, runner_first: runners.first, runner_second: runners.second, runner_third: runners.third }} onClose={() => setIsDevSettingsOpen(false)} setScreen={setScreen} />}
+
             {/* Scoreboard */}
             <div className="absolute left-4 top-4">
                 <ScoreBoard
@@ -288,6 +297,9 @@ function Game({
     /* GAME SCREEN - BATTER */
     if (role === 'batter') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
+
+            <button onClick={() => setIsDevSettingsOpen(true)} className="absolute bottom-4 left-4 z-10 rounded bg-gray-950/85 px-3 py-2 text-xs font-bold text-amber-300 ring-1 ring-amber-400/60 hover:bg-gray-800">DEV SETTINGS</button>
+            {isDevSettingsOpen && <DevSettings roomCode={roomCode} isHost={isHost} pitches={myPitches} gameState={{ inning, inning_frame: inningFrame, strikes, balls, outs, score_home: scoreHome, score_away: scoreAway, runner_first: runners.first, runner_second: runners.second, runner_third: runners.third }} onClose={() => setIsDevSettingsOpen(false)} setScreen={setScreen} />}
 
             {/* Scoreboard */}
             <div className="absolute left-4 top-4">
