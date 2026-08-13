@@ -260,25 +260,3 @@ export async function swapRoles(roomCode, currentRoleP1) {
     if (error) console.error('swapRoles error:', error);
     return data;
 }
-
-// =============== DEVELOPER TOOLS =============== //
-
-// These helpers are intentionally separate from the play-resolution engines. They
-// are for setting up repeatable test scenarios without affecting normal gameplay.
-export async function updateDevGameState(roomCode, changes) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update(changes)
-        .eq('id', roomCode)
-        .select()
-        .single();
-
-    if (error) console.error('updateDevGameState error:', error);
-    return data;
-}
-
-export async function updateDevPitchSet(roomCode, isHost, pitches) {
-    const pitchColumn = isHost ? 'pitch_set_p1' : 'pitch_set_p2';
-
-    return updateDevGameState(roomCode, { [pitchColumn]: pitches });
-}
