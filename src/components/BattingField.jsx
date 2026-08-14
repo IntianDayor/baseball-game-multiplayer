@@ -19,7 +19,7 @@ import {
     BALL_DISPLAY_SIZE,
     BALL_SPRITE
 } from "../lib/engines/sprites";
-import ballSprite from "../assets/sprite/BaseBallSpriteSheet_PLACEHOLDER10.png";
+import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
 
 /* MATH FUNCTIONS */
 
