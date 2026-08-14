@@ -19,7 +19,7 @@ import {
     BALL_DISPLAY_SIZE,
     BALL_SPRITE
 } from "../lib/engines/sprites";
-import ballSprite from "../assets/sprite/BaseBallSpriteSheet_PLACEHOLDER3.png";
+import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
 
 /* MATH FUNCTIONS */
 
@@ -77,7 +77,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
     const [frameIndex, setFrameIndex] = useState(0);
-    const [glowBrightness, setGlowBrightness] = useState(0);
+    const [glowBrightness, setGlowBrightness] = useState(1);
     const [isHittableWindow, setIsHittableWindow] = useState(false);
     const [spinRow, setSpinRow] = useState(0);
 
