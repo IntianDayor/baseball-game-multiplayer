@@ -27,7 +27,8 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
             score_away: Math.max(0, Number(state.score_away) || 0),
             runner_first: state.runner_first,
             runner_second: state.runner_second,
-            runner_third: state.runner_third
+            runner_third: state.runner_third,
+            game_frozen: state.game_frozen ?? false
         });
         setMessage(result ? 'Scenario applied to this room.' : 'Could not save. Check the console/Supabase policy.');
     };
@@ -91,6 +92,11 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
                         <div className="mt-3 flex gap-3 text-sm">
                             {['first', 'second', 'third'].map(base => <label key={base} className="flex items-center gap-1"><input type="checkbox" checked={state[`runner_${base}`]} onChange={event => changeState(`runner_${base}`, event.target.checked)} /> {base}</label>)}
                         </div>
+                        <label className="mt-3 flex items-center gap-2 rounded bg-gray-700 p-2 text-sm font-bold">
+                            <input type="checkbox" checked={state.game_frozen ?? false} onChange={event => changeState('game_frozen', event.target.checked)} />
+                            Freeze game progression
+                        </label>
+                        <p className="mt-2 text-xs text-gray-400">When enabled, pitches won't advance counts, outs, or innings.</p>
                         <button onClick={saveScenario} className="mt-4 rounded bg-amber-500 px-3 py-2 text-sm font-bold text-gray-950 hover:bg-amber-400">Apply scenario</button>
                     </div>
                 </div>

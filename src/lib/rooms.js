@@ -191,6 +191,11 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
 
+    // If game is frozen, skip all progression engines
+    if (current.game_frozen) {
+        return current;
+    }
+
     // Count Manager
     let state = {
         ...current,
