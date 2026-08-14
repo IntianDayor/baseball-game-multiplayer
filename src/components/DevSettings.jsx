@@ -3,6 +3,7 @@ import { PITCH_LIBRARY } from "../data/pitches";
 import { gameOver, updateDevGameState, updateDevPitchSet } from "../lib/rooms";
 
 const PITCHES = Object.entries(PITCH_LIBRARY);
+const SPIN_TYPES = ['BACKSPIN', 'TOPSPIN', 'SIDESPIN', 'COMBINED', 'UNSTABLE'];
 
 function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen }) {
     const [loadout, setLoadout] = useState(() => ({
@@ -10,10 +11,19 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
         W: pitches?.W?.name ?? PITCH_LIBRARY.slider.name,
         E: pitches?.E?.name ?? PITCH_LIBRARY.curveball.name
     }));
+    const [spinFilters, setSpinFilters] = useState({
+        Q: 'BACKSPIN',
+        W: 'SIDESPIN',
+        E: 'TOPSPIN'
+    });
     const [state, setState] = useState(gameState);
     const [message, setMessage] = useState('');
 
     const changeState = (key, value) => setState(current => ({ ...current, [key]: value }));
+
+    const getPitchesBySpinType = (spinType) => {
+        return Object.entries(PITCH_LIBRARY).filter(([_, pitch]) => pitch.spinType === spinType);
+    };
 
     const saveScenario = async () => {
         setMessage('Saving scenario...');
@@ -52,6 +62,25 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
         setScreen('gameover');
     };
 
+    const resetGame = async () => {
+        setMessage('Resetting game...');
+        const resetState = {
+            inning: 1,
+            inning_frame: 'top',
+            strikes: 0,
+            balls: 0,
+            outs: 0,
+            score_home: 0,
+            score_away: 0,
+            runner_first: false,
+            runner_second: false,
+            runner_third: false
+        };
+        setState(resetState);
+        const result = await updateDevGameState(roomCode, resetState);
+        setMessage(result ? 'Game reset to start.' : 'Could not reset. Check the console/Supabase policy.');
+    };
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
             <section className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border-2 border-amber-400 bg-gray-900 p-5 text-white shadow-2xl">
@@ -68,12 +97,17 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
                         <h3 className="mb-3 font-bold text-amber-200">My test pitch loadout</h3>
                         <p className="mb-3 text-xs text-gray-400">Overrides only your random Q/W/E pitches. Rejoin/create a room to return to normal random generation.</p>
                         {['Q', 'W', 'E'].map(key => (
-                            <label key={key} className="mb-2 flex items-center gap-2 text-sm">
-                                <span className="w-5 font-bold">{key}</span>
-                                <select value={loadout[key]} onChange={event => setLoadout(current => ({ ...current, [key]: event.target.value }))} className="min-w-0 flex-1 rounded bg-gray-700 p-2">
-                                    {PITCHES.map(([id, pitch]) => <option key={id} value={pitch.name}>{pitch.name}</option>)}
+                            <div key={key} className="mb-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <span className="w-5 font-bold text-yellow-400">{key}</span>
+                                    <select value={spinFilters[key]} onChange={event => setSpinFilters(current => ({ ...current, [key]: event.target.value }))} className="flex-1 rounded bg-gray-700 p-2 text-sm">
+                                        {SPIN_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                                    </select>
+                                </div>
+                                <select value={loadout[key]} onChange={event => setLoadout(current => ({ ...current, [key]: event.target.value }))} className="w-full rounded bg-gray-700 p-2 text-sm">
+                                    {getPitchesBySpinType(spinFilters[key]).map(([id, pitch]) => <option key={id} value={pitch.name}>{pitch.name}</option>)}
                                 </select>
-                            </label>
+                            </div>
                         ))}
                         <button onClick={savePitchLoadout} className="mt-2 rounded bg-amber-500 px-3 py-2 text-sm font-bold text-gray-950 hover:bg-amber-400">Apply test pitches</button>
                     </div>
@@ -103,7 +137,10 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
 
                 <div className="mt-5 flex items-center justify-between gap-3 border-t border-gray-700 pt-4">
                     <span className="text-xs text-gray-400">{message}</span>
-                    <button onClick={finishGame} className="rounded bg-red-700 px-3 py-2 text-sm font-bold hover:bg-red-600">Force game over</button>
+                    <div className="flex gap-2">
+                        <button onClick={resetGame} className="rounded bg-yellow-600 px-3 py-2 text-sm font-bold hover:bg-yellow-500">Reset game</button>
+                        <button onClick={finishGame} className="rounded bg-red-700 px-3 py-2 text-sm font-bold hover:bg-red-600">Force game over</button>
+                    </div>
                 </div>
             </section>
         </div>
