@@ -10,15 +10,15 @@ import {
     getTimingQuality,
     BALL_HIT_RADIUS,
     VERY_LATE_THRESHOLD_MS
-} from "../../utils/engines/hit-calculator";
-import { rollFielder } from "../../utils/engines/fielder";
+} from "../utils/engines/hit-calculator";
+import { rollFielder } from "../utils/engines/fielder";
 import {
     getFrames,
     getScaledSpritePosition,
     getSpinRow,
     BALL_DISPLAY_SIZE,
     BALL_SPRITE
-} from "../../utils/engines/sprites";
+} from "../utils/engines/sprites";
 import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
 
 /* MATH FUNCTIONS */

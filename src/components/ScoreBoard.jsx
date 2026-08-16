@@ -1,4 +1,4 @@
-import { formatInning } from "../../utils/engines/innings";
+import { formatInning } from "../utils/engines/innings";
 
 /* Counter UI */
 function CountIndicator({ count, max, activeColor }) {
