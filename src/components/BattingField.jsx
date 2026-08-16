@@ -80,6 +80,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [glowBrightness, setGlowBrightness] = useState(1);
     const [isHittableWindow, setIsHittableWindow] = useState(false);
     const [spinRow, setSpinRow] = useState(0);
+    const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -115,6 +116,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setPitchTaken(false);
                 setHintShrinking(false);
                 setTimingQuality(null);
+                setStrikeZoneVisible(true);
 
                 hintShrinkingRef.current = setTimeout(() => setHintShrinking(true), 20);
 
@@ -130,6 +132,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     setCanSwing(true);
                     setIsBallFlying(true);
                     setPitchStartTime(Date.now());
+                    setStrikeZoneVisible(false);
                     isBallFlyingRef.current = true;
 
                     // ANIMATION
@@ -230,6 +233,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             });
             setHint(null);
             setIsBallFlying(false);
+            setStrikeZoneVisible(true);
             isBallFlyingRef.current = false;
 
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -435,7 +439,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 {/* Strike Zone */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    < StrikeZone pitches={pitches} selected={selected} />
+                    < StrikeZone 
+                        pitches={pitches} 
+                        selected={selected} 
+                        visible={strikeZoneVisible} 
+                    />
                 </div>
 
             </div>

@@ -17,6 +17,9 @@ function PitchingField({ pitches, selected, roomCode }) {
     const [hasActivePitch, setHasActivePitch] = useState(false);
     const [lastPitchMarker, setLastPitchMarker] = useState(null);
 
+    // Animation Variables
+    const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
+
     // Power Mechanic
     const atMaxSinceRef = useRef(null);
     useEffect(() => {
@@ -71,6 +74,7 @@ function PitchingField({ pitches, selected, roomCode }) {
                 if (swing.result) {
                     setPitchResult(swing.result);
                     setHasActivePitch(false);
+                    setStrikeZoneVisible(true);
 
                     if (thrownRef.current) setLastPitchMarker(thrownRef.current);
                     setThrown(null);
@@ -104,6 +108,8 @@ function PitchingField({ pitches, selected, roomCode }) {
                 if (hasActivePitch) return;
 
                 setHasActivePitch(true);
+
+                setStrikeZoneVisible(false);
 
                 const pitchData = pitches[selected];
 
@@ -154,7 +160,11 @@ function PitchingField({ pitches, selected, roomCode }) {
         >
             { /* Strike Zone */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                < StrikeZone pitches={pitches} selected={selected} />
+                < StrikeZone 
+                    pitches={pitches} 
+                    selected={selected} 
+                    visible={strikeZoneVisible} 
+                />
             </div>
 
             {/* Crosshair */}
