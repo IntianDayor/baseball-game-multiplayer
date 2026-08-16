@@ -2,7 +2,7 @@ import { supabase } from "../lib/supabase";
 import { useState, useEffect } from "react";
 import { createRoom, joinRoom, startGame } from "../lib/rooms";
 
-function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
+function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode, uid }) {
     // Generates the Room Code
     function generateRandomCode() {
         return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -13,7 +13,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
     const [error, setError] = useState('');
     const [playerJoined, setPlayerJoined] = useState(false);
 
-    useEffect(() =>{
+    useEffect(() => {
         if (!roomCode) return;
 
         const channel = supabase
@@ -48,7 +48,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                         setRoomCode(code);
                         setMode('waiting');
                         setIsHost(true);
-                        await createRoom(code);
+                        await createRoom(code, uid);
                     }}
                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-32 -translate-y-2 active:translate-y-0 active:border-b-0"
                 >
@@ -70,7 +70,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
         </div>
     );
 
-    /* CREATE LOBBY */
+    /* CREATED ROOM / WAITING LOBBY */
     if (mode === 'waiting') return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white">
             {isHost && (
@@ -83,13 +83,13 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                 {isHost ? (
                     <>
                         <div className="p-5 m-5">
-                            {playerJoined ? ( 
-                             'Player 2 Joined! Ready to Start!') : ('Waiting for a Friend...')}
+                            {playerJoined ? (
+                                'Player 2 Joined! Ready to Start!') : ('Waiting for a Friend...')}
                         </div>
-                        <button 
-                        onClick={async () => await startGame(roomCode)}
-                        disabled={!playerJoined}
-                        className={`bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 font-bold text-gray-900 text-center w-40 -translate-y-2 
+                        <button
+                            onClick={async () => await startGame(roomCode)}
+                            disabled={!playerJoined}
+                            className={`bg-gray-300 border-2 border-gray-700 border-b-12 rounded px-6 py-4 font-bold text-gray-900 text-center w-40 -translate-y-2 
                                     ${!playerJoined ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer active:translate-y-0 active:border-b-0'}`}
                         >
                             Start Game!
@@ -116,7 +116,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                 <input
                     onChange={(e) => {
                         setJoinInput(e.target.value),
-                        setError(null)
+                            setError(null)
                     }}
                     value={joinInput}
                     className=" rounded-xl uppercase text-gray-900 font-bold p-4 text-2xl text-center bg-white"
@@ -126,7 +126,7 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode }) {
                 <button
                     onClick={async () => {
                         setError('');
-                        const result = await joinRoom(joinInput);
+                        const result = await joinRoom(joinInput, uid);
                         if (!result) {
                             setError('Room not found!');
                         } else {

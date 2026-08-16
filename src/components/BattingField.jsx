@@ -10,15 +10,15 @@ import {
     getTimingQuality,
     BALL_HIT_RADIUS,
     VERY_LATE_THRESHOLD_MS
-} from "../lib/engines/hit-calculator";
-import { rollFielder } from "../lib/engines/fielder";
+} from "../utils/engines/hit-calculator";
+import { rollFielder } from "../utils/engines/fielder";
 import {
     getFrames,
     getScaledSpritePosition,
     getSpinRow,
     BALL_DISPLAY_SIZE,
     BALL_SPRITE
-} from "../lib/engines/sprites";
+} from "../utils/engines/sprites";
 import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
 
 /* MATH FUNCTIONS */
@@ -80,6 +80,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [glowBrightness, setGlowBrightness] = useState(1);
     const [isHittableWindow, setIsHittableWindow] = useState(false);
     const [spinRow, setSpinRow] = useState(0);
+    const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -115,6 +116,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setPitchTaken(false);
                 setHintShrinking(false);
                 setTimingQuality(null);
+                setStrikeZoneVisible(true);
 
                 hintShrinkingRef.current = setTimeout(() => setHintShrinking(true), 20);
 
@@ -130,6 +132,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     setCanSwing(true);
                     setIsBallFlying(true);
                     setPitchStartTime(Date.now());
+                    setStrikeZoneVisible(false);
                     isBallFlyingRef.current = true;
 
                     // ANIMATION
@@ -230,6 +233,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             });
             setHint(null);
             setIsBallFlying(false);
+            setStrikeZoneVisible(true);
             isBallFlyingRef.current = false;
 
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -353,17 +357,22 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     <div
                         className={"absolute rounded-full border-2 pointer-events-none border-white"}
                         style={{
-                            width: hintShrinking ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
-                            height: hintShrinking ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
-                            left: hint.hint_x - (hint.breakScale ?? 8) * 2,
-                            top: hint.hint_y - (hint.breakScale ?? 8) * 2,
+                            ...(() => {
+                                const size = hintShrinking ? 20 : (hint.breakScale ?? 8) * 4;
+                                return {
+                                    width: `${size}px`,
+                                    height: `${size}px`,
+                                    left: hint.hint_x - size / 2,
+                                    top: hint.hint_y - size / 2,
+                                };
+                            })(),
                             opacity: hintShrinking ? 0 : 1,
                             transition: `
-                            width ${hintDurationRef.current}ms ease-in, 
-                            height ${hintDurationRef.current}ms ease-in, 
-                            left ${hintDurationRef.current}ms ease-in, 
-                            top ${hintDurationRef.current}ms ease-in, 
-                            opacity ${hintDurationRef.current}ms ease-in
+                                width ${hintDurationRef.current}ms ease-in, 
+                                height ${hintDurationRef.current}ms ease-in, 
+                                left ${hintDurationRef.current}ms ease-in, 
+                                top ${hintDurationRef.current}ms ease-in, 
+                                opacity ${hintDurationRef.current}ms ease-in
                             `,
                         }}
                     />
@@ -430,7 +439,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 {/* Strike Zone */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    < StrikeZone pitches={pitches} selected={selected} />
+                    < StrikeZone 
+                        pitches={pitches} 
+                        selected={selected} 
+                        visible={strikeZoneVisible} 
+                    />
                 </div>
 
             </div>

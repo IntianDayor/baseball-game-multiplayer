@@ -1,4 +1,5 @@
 /* MATH FUNCTIONS */
+
 const MIN_POWER_FACTOR = 0.75;
 const MAX_POWER_FACTOR = 1.6;
 const MIN_SPREAD_FACTOR = 0.8;
@@ -59,21 +60,10 @@ export function resolvePitchLocation(pitch, {aim_x, aim_y, power = 0}) {
   const final_y = aim_y + moveY + noiseY;
 
   // HINT SYSTEM //
-  const hintBias = 0.25; // how close hint is to real movement
 
-  const predictedX = aim_x + moveX * hintBias;
-  const predictedY = aim_y + moveY * hintBias;
-
-  // hint uncertainty = depends on chaos + break
-  let hintRadius;
-
-  if (chaos) {
-    hintRadius = 38;
-  } else if (disguised) {
-    hintRadius = 6;
-  } else {
-    hintRadius = clamp(10 + breakMagnitude * 2.2, 8, 26);
-  }
+  const predictedX = aim_x
+  const predictedY = aim_y
+  const hintRadius = 10;
 
   return {
     hint_x: predictedX,
