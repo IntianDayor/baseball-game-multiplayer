@@ -63,7 +63,7 @@ export function resolvePitchLocation(pitch, {aim_x, aim_y, power = 0}) {
 
   const predictedX = aim_x
   const predictedY = aim_y
-  const hintRadius = 10;
+  const hintRadius = 20;
 
   return {
     hint_x: predictedX,
