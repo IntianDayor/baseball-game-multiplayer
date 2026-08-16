@@ -353,17 +353,22 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     <div
                         className={"absolute rounded-full border-2 pointer-events-none border-white"}
                         style={{
-                            width: hintShrinking ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
-                            height: hintShrinking ? '20px' : `${(hint.breakScale ?? 8) * 4}px`,
-                            left: hint.hint_x - (hint.breakScale ?? 8) * 2,
-                            top: hint.hint_y - (hint.breakScale ?? 8) * 2,
+                            ...(() => {
+                                const size = hintShrinking ? 20 : (hint.breakScale ?? 8) * 4;
+                                return {
+                                    width: `${size}px`,
+                                    height: `${size}px`,
+                                    left: hint.hint_x - size / 2,
+                                    top: hint.hint_y - size / 2,
+                                };
+                            })(),
                             opacity: hintShrinking ? 0 : 1,
                             transition: `
-                            width ${hintDurationRef.current}ms ease-in, 
-                            height ${hintDurationRef.current}ms ease-in, 
-                            left ${hintDurationRef.current}ms ease-in, 
-                            top ${hintDurationRef.current}ms ease-in, 
-                            opacity ${hintDurationRef.current}ms ease-in
+                                width ${hintDurationRef.current}ms ease-in, 
+                                height ${hintDurationRef.current}ms ease-in, 
+                                left ${hintDurationRef.current}ms ease-in, 
+                                top ${hintDurationRef.current}ms ease-in, 
+                                opacity ${hintDurationRef.current}ms ease-in
                             `,
                         }}
                     />
