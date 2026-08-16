@@ -1,17 +1,17 @@
 import { supabase } from './supabase'
 import { getGamePitches } from '../data/pitches';
-import { applyCountEngine } from './engines/counts';
-import { applyInningEngine } from './engines/innings';
-import { applyRunnerEngine } from './engines/runners';
-import { applyWalkEngine } from './engines/walks';
+import { applyCountEngine } from '../utils/engines/counts';
+import { applyInningEngine } from '../utils/engines/innings';
+import { applyRunnerEngine } from '../utils/engines/runners';
+import { applyWalkEngine } from '../utils/engines/walks';
 
-export async function createRoom(roomCode) {
+export async function createRoom(roomCode, uid) {
     const { data, error } = await supabase
         .from('rooms')
         .insert({
             id: roomCode,
             status: 'waiting',
-            player1_id: roomCode + '_p1',
+            player1_id: roomCode + uid + '_p1',
             pitch_set_p1: getGamePitches(),
             pitch_set_p2: getGamePitches(),
         })
@@ -23,11 +23,11 @@ export async function createRoom(roomCode) {
 
 }
 
-export async function joinRoom(roomCode) {
+export async function joinRoom(roomCode, uid) {
     const { data, error } = await supabase
         .from('rooms')
         .update({
-            player2_id: roomCode + '_p2',
+            player2_id: roomCode + uid + '_p2',
             status: 'active'
         })
         .eq('id', roomCode)
@@ -134,6 +134,7 @@ export async function throwPitch(roomCode, pitchData) {
             hint_x: pitchData.hint_x,
             hint_y: pitchData.hint_y,
             break_scale: pitchData.break_scale,
+            movement_scale: pitchData.movement_scale,
             power: pitchData.power,
             pitch_type: pitchData.pitch_type,
             is_strike: pitchData.is_strike,

@@ -1,6 +1,6 @@
-function StrikeZone () {
+function StrikeZone ({ visible = true }) {
     return (
-        <div className="grid grid-cols-3 w-32 h-32 ">
+        <div className={`grid grid-cols-3 w-32 h-32 transition-opacity duration-300 ${visible ? 'opacity-100' : 'opacity-0'}`}>
             {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((cell) => (
                 <div
                 key = {cell}

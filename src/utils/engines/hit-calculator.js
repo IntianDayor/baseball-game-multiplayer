@@ -1,4 +1,11 @@
-export const PERFECT_WINDOW_MS = 40;
+export const PERFECT_WINDOW_MS = 60;
+export const BALL_HIT_RADIUS = 12;
+export const VERY_LATE_THRESHOLD_MS = 120;
+const MEATBALL_THRESHOLD = 10;
+const MEATBALL_MULTIPLIER = 3;
+const SPEED_BASELINE = 6;
+const SPEED_BONUS_PER_POINT = 3;
+const SPEED_PENALTY_PER_POINT = 4;
 
 export function getTrajectory(verticalOffset, radius) {
     const threshold = radius * 0.3;
@@ -19,10 +26,10 @@ function getContactQuality(distance, radius) {
 export function getTimingQuality(timingOffset, reactionTime) {
     const adjusted = timingOffset - reactionTime;
 
-    if (adjusted < -120) return "very_early";
+    if (adjusted < -VERY_LATE_THRESHOLD_MS) return "very_early";
     if (adjusted < -PERFECT_WINDOW_MS) return "early";
     if (adjusted < PERFECT_WINDOW_MS) return "perfect";
-    if (adjusted < 120) return "late";
+    if (adjusted < VERY_LATE_THRESHOLD_MS) return "late";
     return "very_late";
 }
 
@@ -51,15 +58,23 @@ function applyTimingModifier(baseResult, timingQuality) {
     return baseResult;
 }
 
-export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, pitchPower, swingType) {
+export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, movementScale, swingType) {
 
     const quality = getContactQuality(distance, radius);
 
     const distanceScore = Math.max(0, 100 - (distance * 3));
 
-    const meatballBonus = Math.max(0, 20 - pitchPower);
+    const meatballBonus = Math.max(0, (MEATBALL_THRESHOLD - movementScale) * MEATBALL_MULTIPLIER);
 
-    const total = distanceScore + meatballBonus;
+    let total = distanceScore + meatballBonus;
+
+    const speedDelta = Math.max(0, pitchSpeed - SPEED_BASELINE);
+
+    if (quality === 'perfect' || quality === 'good') {
+        total += speedDelta * SPEED_BONUS_PER_POINT;
+    } else if (quality === 'bad') {
+        total -= speedDelta * SPEED_PENALTY_PER_POINT;
+    }
 
     let timingQuality = getTimingQuality(timingOffset, reactionTime);
 
@@ -100,8 +115,8 @@ export function determineHitType(distance, radius, trajectory, timingOffset, rea
 
     return applyTimingModifier(baseResult, timingQuality);
 }
+// TODO: Something with pitch speed
+export function effectivePitchSpeed(baseSpeed) {
 
-export function effectivePitchSpeed(baseSpeed, power) {
-
-    return baseSpeed * 0.5 + baseSpeed * 0.5 * (power / 100);
+    return baseSpeed;
 }
