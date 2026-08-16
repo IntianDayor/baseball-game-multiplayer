@@ -3,7 +3,7 @@ import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
-import { resolvePitchLocation } from "../lib/engines/pitch-resolver";
+import { resolvePitchLocation } from "../../utils/engines/pitch-resolver";
 
 function PitchingField({ pitches, selected, roomCode }) {
     /* VARIABLES */

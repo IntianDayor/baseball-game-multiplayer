@@ -11,6 +11,7 @@ import { supabase } from "../lib/supabase";
 
 function Game({
     setScreen,
+    uid,
     bats,
     myPitches,
     setMyPitches,
