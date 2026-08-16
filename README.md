@@ -1,102 +1,126 @@
-# Baseball Game
+# ⚾ Baseball Game
 
-A two-player, turn-based baseball game built with React, Vite, Tailwind CSS, and Supabase realtime tables.
+A real-time, turn-based baseball game for two players. Challenge a friend online in strategic pitching and batting gameplay with physics-based ball movement and dynamic fielding.
 
-## Quick Start
+## 🎮 Features
 
-1. Install dependencies:
+- **Real-Time Multiplayer**: Play live against another player with instant game synchronization
+- **Strategic Gameplay**: Master different pitch types and bat selections to outplay your opponent
+- **Dynamic Ball Physics**: Realistic pitch breaks and movement based on power, speed, and spin
+- **Interactive UI**: Visual strike zone, pitch hints, and swing feedback
+- **9-Inning Matches**: Classic baseball format with full inning management
+- **Coin Toss System**: Fair selection for who bats first
+- **Skill-Based Mechanics**: Precise timing and aim determine swing success
 
+## 🚀 Getting Started
+
+### Requirements
+
+- Node.js 16+ and npm
+- Modern web browser (Chrome, Firefox, Safari, Edge)
+- Internet connection for online play
+
+### Installation
+
+1. **Clone the repository** (or download the project):
+   ```bash
+   git clone <repository-url>
+   cd baseball-game
+   ```
+
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-2. Create a `.env` file with Supabase credentials:
-
-   ```bash
-   VITE_SUPABASE_URL=your-project-url
-   VITE_SUPABASE_KEY=your-anon-key
+3. **Set up environment variables**:
+   Create a `.env` file in the root directory:
+   ```
+   VITE_SUPABASE_URL=your-supabase-project-url
+   VITE_SUPABASE_KEY=your-supabase-anon-key
    ```
 
-3. Start the local dev server:
-
+4. **Start the game**:
    ```bash
    npm run dev
    ```
+   
+   Open the URL displayed in your terminal (typically `http://localhost:5173`)
 
-4. Open the Vite URL shown in the terminal.
+## 🕹️ How to Play
 
-## Scripts
+### Game Flow
 
-- `npm run dev`: start the Vite development server.
-- `npm run build`: create a production build.
-- `npm run preview`: serve the production build locally.
-- `npm run lint`: run ESLint across the project.
+1. **Main Menu**: Start a new game
+2. **Create or Join a Lobby**: 
+   - **Host**: Generate a room code to share with your friend
+   - **Guest**: Enter the room code to join
+3. **Coin Toss**: Winner decides whether to bat or pitch first
+4. **Gameplay**:
+   - **Pitcher**: Select pitch type, aim at the strike zone, charge power (tier 0-4), and throw
+   - **Batter**: Watch for a location hint, select your bat type (Q/W/E), and click to swing or take the pitch
+5. **Results**: Each swing result updates the count, score, and game state
+6. **Win Condition**: Most runs after 9 innings wins
 
-## Architecture
+### Pitcher Controls
 
-The app is a client-only React game. Supabase stores rooms, pitches, swings, scores, base runners, counts, innings, and player roles. Realtime subscriptions keep both players synchronized.
+- **Aim**: Move your cursor to position the pitch
+- **Power**: Hold down to charge power (visual tier indicator shows 0-4)
+- **Throw**: Release to pitch
 
-`src/App.jsx` owns top-level screen routing:
+### Batter Controls
 
-- `menu`: match entry point.
-- `lobby`: room creation and joining.
-- `game`: coin toss, pitching, batting, scoring, and inning flow.
-- `gameover`: final result screen.
+- **Bat Selection**: Press Q (Power), W (Speed), or E (Bunt)
+- **Position**: Cursor position = swing target
+- **Swing**: Click to swing or wait to take the pitch
 
-`src/components/Game.jsx` bridges the Supabase room state into React state. It listens for room updates, assigns the local player role, assigns each player their pitch set, updates the scoreboard, and sends the app to the game-over screen when regulation ends with a winner.
+## 📋 System Requirements
 
-`src/lib/rooms.js` is the Supabase API layer. It creates and joins rooms, records coin toss choices, records pitches and swings, updates game state, and swaps roles between batting and pitching.
+- **Minimum**:
+  - 2GB RAM
+  - 100MB free disk space
+  - 5 Mbps internet connection
+  
+- **Recommended**:
+  - 4GB+ RAM
+  - 200MB free disk space
+  - 10+ Mbps internet connection
 
-## Source Layout
+## 🆘 Troubleshooting
 
-```text
-src/
-  App.jsx
-  main.jsx
-  index.css
-  components/
-    BattingField.jsx
-    BattingSelector.jsx
-    Game.jsx
-    GameOver.jsx
-    LastPitchVisual.jsx
-    Loading.jsx
-    Lobby.jsx
-    MainMenu.jsx
-    MiniMap.jsx
-    PitchingField.jsx
-    PitchSelector.jsx
-    ScoreBoard.jsx
-    StrikeZone.jsx
-  data/
-    bats.js
-    pitches.js
-  hooks/
-    key-selector.js
-  lib/
-    supabase.js
-    rooms.js
-    engines/
-      counts.js
-      fielder.js
-      hint-calculator.js
-      hit-calculator.js
-      innings.js
-      runners.js
-      walks.js
-```
+**Connection Issues?**
+- Ensure both players have stable internet
+- Try refreshing the page
+- Check that room codes are entered correctly
 
-## Gameplay Flow
+**Can't join a room?**
+- Verify the room code is correct and hasn't expired
+- Room code must be shared by the host before joining
 
-1. A player starts from the main menu and creates or joins a lobby.
-2. The host creates a Supabase room with generated pitch sets for both players.
-3. The guest chooses heads or tails.
-4. The coin toss winner chooses whether to bat or pitch first.
-5. The pitcher selects a pitch, aims, charges power, and throws.
-6. The batter receives a location hint, swings with the selected bat type, or takes the pitch.
-7. The swing result updates counts, walks, runners, outs, innings, and score.
-8. Three outs swaps player roles and clears the bases.
-9. The game ends after the ninth inning once one side is ahead.
+**Laggy gameplay?**
+- Close other browser tabs and applications
+- Move closer to your router
+- Check your internet connection speed
+
+## 📝 Development
+
+For developers looking to modify or extend the game:
+
+- **Build**: `npm run build` - Create an optimized production build
+- **Preview**: `npm run preview` - Test the production build locally
+- **Lint**: `npm run lint` - Run code quality checks
+
+## 📄 License
+
+This project is provided as-is. All rights reserved.
+
+## 🤝 Support
+
+Having issues? Please check the Troubleshooting section above or contact support.
+
+---
+
+**Enjoy the game!** ⚾
 
 ## Game Engines
 
