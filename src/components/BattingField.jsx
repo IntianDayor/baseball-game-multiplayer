@@ -20,6 +20,7 @@ import {
     BALL_SPRITE
 } from "../utils/engines/sprites";
 import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
+import { clamp, lerp } from "../lib/math";
 
 /* MATH FUNCTIONS */
 
@@ -32,9 +33,6 @@ const HITTABLE_GLOW_MS = 150;
 const MIN_HINT_MS = 400;
 const MAX_HINT_MS = 500;
 const LATE_SWING_BUFFER_MS = 100; // Cushion
-
-const lerp = (a, b, t) => a + (b - a) * t;
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const calcReactionTime = (effectiveSpeed) => {
     const speedT = clamp(
