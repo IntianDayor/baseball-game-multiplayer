@@ -5,9 +5,11 @@ import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
+import UtilityButtons from "./UtilityButtons";
 import DevSettings from "./DevSettings";
-import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import { coinChoice, gameOver, updateCoinTossRes, updateGameState, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
+import Loading from "./Loading";
 
 function Game({
     setScreen,
@@ -56,6 +58,26 @@ function Game({
         second: false,
         third: false
     });
+
+    // Super and Utility Button Handlers
+    function onSuper(){
+        // Super Ability (Coming Soon)
+        return <div>This feature isn't available yet...</div>
+    }
+
+    function onUtilityButton(role) {
+        if (!role) return <Loading />;
+
+        // If pitcher utility button is Intentional Walk
+        if (role === "pitcher") {
+            // still working on
+        }
+        // If batter utility button is (Comming Soon)
+        if (role === "batter") {
+
+        }
+
+    }
 
     // Database Listener
     useEffect(() => {
@@ -291,6 +313,11 @@ function Game({
                 selected={selected}
                 setSelected={setSelected}
             />
+            <UtilityButtons 
+                onSuper={onSuper}
+                onUtilityButton={onUtilityButton}
+                role={role}
+            />
 
         </div>
     );
@@ -347,12 +374,18 @@ function Game({
                 setSelected={setSelected}
             />
 
+            <UtilityButtons
+                onSuper={onSuper}
+                onUtilityButton={onUtilityButton}
+                role={role}
+            />
+
         </div>
     );
 
     /* FAIL SAFE RETURN / LOADING SCREEN */
     return (
-        <h1>Somethng went wrong... Try to refresh browser!</h1>
+        <Loading />
     );
 }
 
