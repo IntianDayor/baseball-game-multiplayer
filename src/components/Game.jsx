@@ -7,7 +7,7 @@ import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
 import UtilityButtons from "./UtilityButtons";
 import DevSettings from "./DevSettings";
-import { coinChoice, gameOver, updateCoinTossRes, updateGameState, updatePlayerRole } from "../lib/rooms";
+import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
 import Loading from "./Loading";
@@ -16,7 +16,6 @@ const UTILITY_HOLD_MS = 2000;
 
 function Game({
     setScreen,
-    uid,
     bats,
     myPitches,
     setMyPitches,
@@ -103,7 +102,7 @@ function Game({
         }
         // If batter utility button is (Comming Soon)
         if (role === "batter") {
-
+            // TODO: Implement batter utility button
         }
     }
 

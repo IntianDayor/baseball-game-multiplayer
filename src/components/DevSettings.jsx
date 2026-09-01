@@ -2,7 +2,6 @@ import { useState } from "react";
 import { PITCH_LIBRARY } from "../data/pitches";
 import { gameOver, updateDevGameState, updateDevPitchSet } from "../lib/rooms";
 
-const PITCHES = Object.entries(PITCH_LIBRARY);
 const SPIN_TYPES = ['BACKSPIN', 'TOPSPIN', 'SIDESPIN', 'COMBINED', 'UNSTABLE'];
 
 function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen }) {
@@ -22,7 +21,7 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
     const changeState = (key, value) => setState(current => ({ ...current, [key]: value }));
 
     const getPitchesBySpinType = (spinType) => {
-        return Object.entries(PITCH_LIBRARY).filter(([_, pitch]) => pitch.spinType === spinType);
+        return Object.entries(PITCH_LIBRARY).filter(([, pitch]) => pitch.spinType === spinType);
     };
 
     const saveScenario = async () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { clamp } from "../lib/math";
 
 export function useHoldTrigger (callback, durationMs) {
@@ -42,7 +42,7 @@ export function useHoldTrigger (callback, durationMs) {
         animateProgress();
     }
 
-    function cancelHold() {
+    const cancelHold = useCallback(() => {
         if (!isHoldingRef.current) return;
 
         clearTimeout(holdTimeOutRef.current);
@@ -50,7 +50,7 @@ export function useHoldTrigger (callback, durationMs) {
         cancelAnimationFrame(rafRef.current);
 
         resetHoldState();
-    }
+    }, []);
 
     function resetHoldState() {
         isHoldingRef.current = false;
@@ -61,7 +61,7 @@ export function useHoldTrigger (callback, durationMs) {
 
     useEffect(() => {
         return () => cancelHold();
-    }, []);
+    }, [cancelHold]);
 
 
 

@@ -8,7 +8,6 @@ import {
     effectivePitchSpeed,
     getTrajectory,
     getTimingQuality,
-    BALL_HIT_RADIUS,
     VERY_LATE_THRESHOLD_MS
 } from "../utils/engines/hit-calculator";
 import { rollFielder } from "../utils/engines/fielder";
@@ -76,10 +75,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
     const [frameIndex, setFrameIndex] = useState(0);
-    const [glowBrightness, setGlowBrightness] = useState(1);
-    const [isHittableWindow, setIsHittableWindow] = useState(false);
+    const glowBrightness = 1;
+    const isHittableWindow = false;
     const [spinRow, setSpinRow] = useState(0);
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
+    const [hintDuration, setHintDuration] = useState(0);
 
     // Intentional Walk Listener
     useEffect(() => {
@@ -152,7 +152,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 // Shows hint first then after short delay canSwing is true
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
-                hintDurationRef.current = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
+                const duration = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
+                hintDurationRef.current = duration;
+                setHintDuration(duration);
 
                 if (readDelayRef.current) clearTimeout(readDelayRef.current);
 
@@ -410,11 +412,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             })(),
                             opacity: hintShrinking ? 0 : 1,
                             transition: `
-                                width ${hintDurationRef.current}ms ease-in, 
-                                height ${hintDurationRef.current}ms ease-in, 
-                                left ${hintDurationRef.current}ms ease-in, 
-                                top ${hintDurationRef.current}ms ease-in, 
-                                opacity ${hintDurationRef.current}ms ease-in
+                                width ${hintDuration}ms ease-in, 
+                                height ${hintDuration}ms ease-in, 
+                                left ${hintDuration}ms ease-in, 
+                                top ${hintDuration}ms ease-in, 
+                                opacity ${hintDuration}ms ease-in
                             `,
                         }}
                     />

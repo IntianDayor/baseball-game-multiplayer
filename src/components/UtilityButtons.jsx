@@ -32,6 +32,8 @@ function UtilityButtons({ role, superHold, utilityHold, disabled = false }) {
     };
   }, [
     disabled,
+    superHold,
+    utilityHold,
     superHold.startHold,
     superHold.cancelHold,
     utilityHold.startHold,

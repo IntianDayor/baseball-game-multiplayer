@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
@@ -41,13 +41,20 @@ function PitchingField({
             onChargeRelease?.();
         }
     }
+
+    function handleCancelCharge() {
+        if (!isCharging) return;
+
+        cancelCharge({ keepCooldown: true });
+        cancelUtilityHold?.();
+    }
     
-    function resetPitchState() {
+    const resetPitchState = useCallback(() => {
         setHasActivePitch(false);
         setStrikeZoneVisible(true);
         setThrown(null);
         setPitchResult(null);
-    }
+    }, [setHasActivePitch]);
     
     // Intentional Walk Mechanic
     useEffect(() => {
@@ -61,7 +68,7 @@ function PitchingField({
             .subscribe();
 
         return () => supabase.removeChannel(channel);
-    }, [roomCode]);
+    }, [roomCode, resetPitchState]);
 
     // Power Mechanic
     useEffect(() => {
@@ -92,7 +99,7 @@ function PitchingField({
 
         return () => clearInterval(interval);
 
-    }, [isCharging]);
+    }, [isCharging, resetPitchState]);
 
     // Latest Thrown Value
     useEffect(() => {
@@ -122,7 +129,7 @@ function PitchingField({
             .subscribe()
 
         return () => supabase.removeChannel(channel)
-    }, [roomCode]);
+    }, [roomCode, resetPitchState]);
 
     if (!pitches) return <div>Loading pitches...</div>;
 
@@ -135,7 +142,8 @@ function PitchingField({
                     y: e.clientY - rect.top
                 });
             }}
-            onMouseDown={() => {
+            onMouseDown={(e) => {
+                if (e.button !== 0) return;
                 if (pitchControlsLocked || isCharging) return;
 
                 cancelUtilityHold?.();
@@ -144,13 +152,10 @@ function PitchingField({
             }}
             onContextMenu={(e) => {
                 e.preventDefault();
-
-                if (!isCharging) return;
-
-                cancelCharge({ keepCooldown: true });
-                cancelUtilityHold?.();
+                handleCancelCharge();
             }}
-            onMouseUp={async () => {
+            onMouseUp={async (e) => {
+                if (e.button !== 0) return;
                 if (!isCharging) return;
 
                 // Pitch Power Reset
