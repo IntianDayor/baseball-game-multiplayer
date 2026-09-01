@@ -29,8 +29,12 @@ function PitchingField({
     // Animation Variables
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
     
+    // Reference Variables
     const atMaxSinceRef = useRef(null);
     const thrownRef = useRef(null);
+
+    // Visual Variables
+    const crosshairSize = 16 + powerTier * 8
 
     function cancelCharge({ keepCooldown = true } = {}) {
         setIsCharging(false);
@@ -228,10 +232,12 @@ function PitchingField({
             </div>
 
             {/* Crosshair */}
-            <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
+            <div className="absolute border-2 border-white rounded-full pointer-events-none"
                 style={{
-                    left: cursorPos.x - 8,
-                    top: cursorPos.y - 8,
+                    width: crosshairSize,
+                    height: crosshairSize,
+                    left: cursorPos.x - crosshairSize / 2,
+                    top: cursorPos.y - crosshairSize / 2,
                 }}
             />
 
