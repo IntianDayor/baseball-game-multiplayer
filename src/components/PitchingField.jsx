@@ -5,23 +5,65 @@ import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
 import { resolvePitchLocation } from "../utils/engines/pitch-resolver";
 
-function PitchingField({ pitches, selected, roomCode }) {
+function PitchingField({
+    pitches,
+    selected,
+    roomCode,
+    hasActivePitch,
+    setHasActivePitch,
+    cancelUtilityHold,
+    pitchControlsLocked,
+    onChargeStart,
+    onChargeRelease
+}) {
     /* VARIABLES */
-
+    
     // Pitching Logic Variables
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [isCharging, setIsCharging] = useState(false);
     const [powerTier, setPowerTier] = useState(0);
     const [thrown, setThrown] = useState(null);
     const [pitchResult, setPitchResult] = useState(null);
-    const [hasActivePitch, setHasActivePitch] = useState(false);
     const [lastPitchMarker, setLastPitchMarker] = useState(null);
 
     // Animation Variables
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
+    
+    const atMaxSinceRef = useRef(null);
+    const thrownRef = useRef(null);
+
+    function cancelCharge({ keepCooldown = true } = {}) {
+        setIsCharging(false);
+        setPowerTier(0);
+        atMaxSinceRef.current = null;
+
+        if (keepCooldown) {
+            onChargeRelease?.();
+        }
+    }
+    
+    function resetPitchState() {
+        setHasActivePitch(false);
+        setStrikeZoneVisible(true);
+        setThrown(null);
+        setPitchResult(null);
+    }
+    
+    // Intentional Walk Mechanic
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase
+            .channel('walk:' + roomCode)
+            .on('broadcast', { event: 'intentional_walk' }, () => {
+                resetPitchState();
+            })
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [roomCode]);
 
     // Power Mechanic
-    const atMaxSinceRef = useRef(null);
     useEffect(() => {
         if (!isCharging) return;
 
@@ -53,7 +95,6 @@ function PitchingField({ pitches, selected, roomCode }) {
     }, [isCharging]);
 
     // Latest Thrown Value
-    const thrownRef = useRef(null);
     useEffect(() => {
         thrownRef.current = thrown;
     }, [thrown]);
@@ -73,11 +114,9 @@ function PitchingField({ pitches, selected, roomCode }) {
                 const swing = payload.new
                 if (swing.result) {
                     setPitchResult(swing.result);
-                    setHasActivePitch(false);
-                    setStrikeZoneVisible(true);
+                    resetPitchState();
 
                     if (thrownRef.current) setLastPitchMarker(thrownRef.current);
-                    setThrown(null);
                 }
             })
             .subscribe()
@@ -96,13 +135,26 @@ function PitchingField({ pitches, selected, roomCode }) {
                     y: e.clientY - rect.top
                 });
             }}
-            onMouseDown={() => setIsCharging(true)}
+            onMouseDown={() => {
+                if (pitchControlsLocked || isCharging) return;
+
+                cancelUtilityHold?.();
+                onChargeStart?.();
+                setIsCharging(true);
+            }}
+            onContextMenu={(e) => {
+                e.preventDefault();
+
+                if (!isCharging) return;
+
+                cancelCharge({ keepCooldown: true });
+                cancelUtilityHold?.();
+            }}
             onMouseUp={async () => {
-                
+                if (!isCharging) return;
+
                 // Pitch Power Reset
-                setIsCharging(false);
-                setPowerTier(0);
-                atMaxSinceRef.current = null;
+                cancelCharge({ keepCooldown: true });
 
                 // Pitching Data
                 if (hasActivePitch) return;
@@ -110,6 +162,9 @@ function PitchingField({ pitches, selected, roomCode }) {
                 setHasActivePitch(true);
 
                 setStrikeZoneVisible(false);
+
+                // Hold Guard
+                cancelUtilityHold?.();
 
                 const pitchData = pitches[selected];
 

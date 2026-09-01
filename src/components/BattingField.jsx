@@ -71,6 +71,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const animStartTimeRef = useRef(null);
     const incomingPitchRef = useRef(null);
     const hintShrinkingRef = useRef(null);
+    const resolutionInProgressRef = useRef(false);
 
     // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
@@ -79,6 +80,37 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [isHittableWindow, setIsHittableWindow] = useState(false);
     const [spinRow, setSpinRow] = useState(0);
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
+
+    // Intentional Walk Listener
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase
+            .channel('walk:' + roomCode)
+            .on('broadcast', { event: 'intentional_walk' }, async () => {
+                if (resolutionInProgressRef.current) return;
+                resolutionInProgressRef.current = true;
+
+                try {
+                    
+                    clearTimeout(autoTakeTimerRef.current);
+                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                    isBallFlyingRef.current = false;
+
+                    setIsBallFlying(false);
+                    setHint(null);
+                    setCanSwing(false);
+                    setStrikeZoneVisible(true);
+
+                    await updateGameState(roomCode, 'walk', false, isHost);
+                } finally {
+                    resolutionInProgressRef.current = false;
+                }
+            })
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [roomCode, isHost]);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -222,30 +254,36 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         const autoTakeDelay = reactionTime + VERY_LATE_THRESHOLD_MS + LATE_SWING_BUFFER_MS;
 
         autoTakeTimerRef.current = setTimeout(async () => {
+            if (resolutionInProgressRef.current) return;
+            resolutionInProgressRef.current = true;
 
-            setCanSwing(false)
-            setPitchTaken(true); // Timer Expired
-            setLastPitchLocation({
-                x: incomingPitch.final_x,
-                y: incomingPitch.final_y
-            });
-            setHint(null);
-            setIsBallFlying(false);
-            setStrikeZoneVisible(true);
-            isBallFlyingRef.current = false;
+            try {
+                setCanSwing(false)
+                setPitchTaken(true); // Timer Expired
+                setLastPitchLocation({
+                    x: incomingPitch.final_x,
+                    y: incomingPitch.final_y
+                });
+                setHint(null);
+                setIsBallFlying(false);
+                setStrikeZoneVisible(true);
+                isBallFlyingRef.current = false;
 
-            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-            const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
+                const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
-            await swingAt(incomingPitch.id, roomCode, {
-                swing_x: null,
-                swing_y: null,
-                swing_type: null,
-                result
-            });
+                await swingAt(incomingPitch.id, roomCode, {
+                    swing_x: null,
+                    swing_y: null,
+                    swing_type: null,
+                    result
+                });
 
-            await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
+                await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
+            } finally {
+                resolutionInProgressRef.current = false;
+            }
 
         }, autoTakeDelay);
 
@@ -271,72 +309,78 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 onClick={async () => {
 
                     if (!canSwing || !incomingPitch || !pitchStartTime) return;
+                    if (resolutionInProgressRef.current) return;
+                    resolutionInProgressRef.current = true;
 
-                    const pitchData = pitches[incomingPitch.pitch_type];
-                    const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
+                    try {
+                        const pitchData = pitches[incomingPitch.pitch_type];
+                        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
 
-                    const swingAtTime = Date.now();
-                    setCanSwing(false);
+                        const swingAtTime = Date.now();
+                        setCanSwing(false);
 
-                    const timingOffset = swingAtTime - pitchStartTime;
+                        const timingOffset = swingAtTime - pitchStartTime;
 
-                    setTimingQuality(getTimingQuality(timingOffset, reactionTimeRef.current));
+                        setTimingQuality(getTimingQuality(timingOffset, reactionTimeRef.current));
 
-                    clearTimeout(autoTakeTimerRef.current);
+                        clearTimeout(autoTakeTimerRef.current);
 
-                    const distance = Math.sqrt(
-                        Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
-                        Math.pow(cursorPos.y - incomingPitch.final_y, 2)
-                    );
+                        const distance = Math.sqrt(
+                            Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
+                            Math.pow(cursorPos.y - incomingPitch.final_y, 2)
+                        );
 
-                    const verticalOffset = cursorPos.y - incomingPitch.final_y;
+                        const verticalOffset = cursorPos.y - incomingPitch.final_y;
 
-                    const isHit = distance <= hitZone;
+                        const isHit = distance <= hitZone;
 
-                    const hitTrajectory = getTrajectory(verticalOffset, hitZone);
+                        const hitTrajectory = getTrajectory(verticalOffset, hitZone);
 
-                    const hitType = isHit
-                        ? determineHitType(
-                            distance,
-                            hitZone,
-                            hitTrajectory,
-                            timingOffset,
-                            reactionTimeRef.current,
-                            effectiveSpeed,
-                            incomingPitch.movement_scale,
-                            selected,
-                        )
-                        : null;
+                        const hitType = isHit
+                            ? determineHitType(
+                                distance,
+                                hitZone,
+                                hitTrajectory,
+                                timingOffset,
+                                reactionTimeRef.current,
+                                effectiveSpeed,
+                                incomingPitch.movement_scale,
+                                selected,
+                            )
+                            : null;
 
-                    // Roll fielder if it's a hit and not a foul
-                    let finalResult = isHit ? hitType : 'swing_miss'
-                    if (
-                        isHit &&
-                        ['single', 'double', 'homerun'].includes(hitType)
-                    ) {
-                        const fielderRoll = rollFielder(hitType, selected);
-                        finalResult = fielderRoll.result;
+                        // Roll fielder if it's a hit and not a foul
+                        let finalResult = isHit ? hitType : 'swing_miss'
+                        if (
+                            isHit &&
+                            ['single', 'double', 'homerun'].includes(hitType)
+                        ) {
+                            const fielderRoll = rollFielder(hitType, selected);
+                            finalResult = fielderRoll.result;
+                        }
+
+                        // After Swing
+                        setSwingResult(finalResult);
+                        setLastPitchLocation({
+                            x: incomingPitch.final_x,
+                            y: incomingPitch.final_y
+                        });
+                        setHint(null);
+                        setIsBallFlying(false);
+                        isBallFlyingRef.current = false;
+
+                        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+                        await swingAt(incomingPitch.id, roomCode, {
+                            swing_x: cursorPos.x,
+                            swing_y: cursorPos.y,
+                            swing_type: selected,
+                            result: finalResult
+                        });
+                        await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
+                    } finally {
+                        resolutionInProgressRef.current = false;
                     }
-
-                    // After Swing
-                    setSwingResult(finalResult);
-                    setLastPitchLocation({
-                        x: incomingPitch.final_x,
-                        y: incomingPitch.final_y
-                    });
-                    setHint(null);
-                    setIsBallFlying(false);
-                    isBallFlyingRef.current = false;
-
-                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-                    await swingAt(incomingPitch.id, roomCode, {
-                        swing_x: cursorPos.x,
-                        swing_y: cursorPos.y,
-                        swing_type: selected,
-                        result: finalResult
-                    });
-                    await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
                 }}
             >
 

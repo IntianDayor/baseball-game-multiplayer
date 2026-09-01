@@ -1,6 +1,6 @@
 import { useKeySelector } from "../hooks/key-selector";
 
-function PitchSelector({ pitches, selected, setSelected }) {
+function PitchSelector({ pitches, selected, setSelected, disabled = false }) {
     useKeySelector(setSelected);
 
     if (!pitches) return null;
@@ -13,13 +13,21 @@ function PitchSelector({ pitches, selected, setSelected }) {
                 const pitch = pitches?.[key];
                 if (!pitch) return null;
 
+                const isDisabled = disabled;
+
                 return (
                     <div key={key}
-                        className={`p-4 rounded border-2 cursor-pointer text-white text-center w-32 ${selected === key
+                        aria-disabled={isDisabled}
+                        className={`p-4 rounded border-2 text-white text-center w-32 ${isDisabled
+                                ? 'border-gray-500 bg-gray-700 opacity-50 cursor-not-allowed pointer-events-none'
+                                : 'border-gray-600 bg-gray-800 cursor-pointer'} ${selected === key && !isDisabled
                                 ? 'border-yellow-400 bg-gray-700'
-                                : 'border-gray-600 bg-gray-800'
+                                : ''
                             }`}
-                        onClick={() => setSelected(key)}
+                        onClick={() => {
+                            if (isDisabled) return;
+                            setSelected(key);
+                        }}
                     >
                         <div className="text-yellow-400 font-bold">{key}</div>
                         <div className="text-sm">{pitch.name}</div>

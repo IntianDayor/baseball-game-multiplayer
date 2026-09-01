@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
@@ -9,7 +9,10 @@ import UtilityButtons from "./UtilityButtons";
 import DevSettings from "./DevSettings";
 import { coinChoice, gameOver, updateCoinTossRes, updateGameState, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
+import { useHoldTrigger } from "../hooks/hold-trigger";
 import Loading from "./Loading";
+
+const UTILITY_HOLD_MS = 2000;
 
 function Game({
     setScreen,
@@ -58,6 +61,28 @@ function Game({
         second: false,
         third: false
     });
+    const [hasActivePitch, setHasActivePitch] = useState(false);
+    const [pitchControlsLocked, setPitchControlsLocked] = useState(false);
+    const walkChannelRef = useRef(null);
+    const pitchCooldownRef = useRef(null);
+
+    function beginPitchCharge() {
+        clearTimeout(pitchCooldownRef.current);
+        setPitchControlsLocked(true);
+    }
+
+    function releasePitchCharge(delayMs = 450) {
+        clearTimeout(pitchCooldownRef.current);
+        setPitchControlsLocked(true);
+
+        pitchCooldownRef.current = setTimeout(() => {
+            setPitchControlsLocked(false);
+        }, delayMs);
+    }
+
+    useEffect(() => {
+        return () => clearTimeout(pitchCooldownRef.current);
+    }, []);
 
     // Super and Utility Button Handlers
     function onSuper(){
@@ -65,19 +90,40 @@ function Game({
         return <div>This feature isn't available yet...</div>
     }
 
-    function onUtilityButton(role) {
-        if (!role) return <Loading />;
-
+    async function onUtilityButton(role) {
         // If pitcher utility button is Intentional Walk
         if (role === "pitcher") {
-            // still working on
+            if (hasActivePitch) return;
+
+            await walkChannelRef.current?.send({
+                type: 'broadcast',
+                event: 'intentional_walk',
+                payload: {}
+            });
         }
         // If batter utility button is (Comming Soon)
         if (role === "batter") {
 
         }
-
     }
+
+    // Hold-guard state for Super and the Utility button.
+    const superHold = useHoldTrigger(onSuper, UTILITY_HOLD_MS);
+    const utilityHold = useHoldTrigger(() => onUtilityButton(role), UTILITY_HOLD_MS);
+
+    // Walk Broadcast Channel Setup
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase.channel('walk:' + roomCode);
+        channel.subscribe();
+        walkChannelRef.current = channel;
+
+        return () => {
+            supabase.removeChannel(channel);
+            walkChannelRef.current = null;
+        };
+    }, [roomCode]);
 
     // Database Listener
     useEffect(() => {
@@ -237,7 +283,7 @@ function Game({
                 >
                     {tossWinner ? (
                         <>
-                            <div>🏆 You Win the Toss! Choose Play Order</div>
+                            <div>You Win the Toss! Choose Play Order</div>
                             <div className="flex gap-4 p-4 m-4">
                                 <button
                                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
@@ -258,7 +304,7 @@ function Game({
                             </div>
                         </>
                     ) : (
-                        <div>😔 You Lost the Toss! Opponent is Choosing Play Order</div>
+                        <div>You Lost the Toss! Opponent is Choosing Play Order</div>
                     )}
                 </div>
             )}
@@ -307,16 +353,24 @@ function Game({
                 inning={inning}
                 scoreHome={scoreHome}
                 scoreAway={scoreAway}
+                hasActivePitch={hasActivePitch}
+                setHasActivePitch={setHasActivePitch}
+                cancelUtilityHold={utilityHold.cancelHold}
+                pitchControlsLocked={pitchControlsLocked}
+                onChargeStart={beginPitchCharge}
+                onChargeRelease={releasePitchCharge}
             />
             <PitchSelector
                 pitches={myPitches}
                 selected={selected}
                 setSelected={setSelected}
+                disabled={pitchControlsLocked}
             />
             <UtilityButtons 
-                onSuper={onSuper}
-                onUtilityButton={onUtilityButton}
                 role={role}
+                superHold={superHold}
+                utilityHold={utilityHold}
+                disabled={pitchControlsLocked}
             />
 
         </div>
@@ -375,9 +429,9 @@ function Game({
             />
 
             <UtilityButtons
-                onSuper={onSuper}
-                onUtilityButton={onUtilityButton}
                 role={role}
+                superHold={superHold}
+                utilityHold={utilityHold}
             />
 
         </div>

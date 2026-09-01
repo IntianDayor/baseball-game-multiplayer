@@ -1,15 +1,12 @@
 import { useEffect } from "react";
 import Loading from "./Loading";
-import { useHoldTrigger } from "../hooks/hold-trigger";
 
-const UTILITY_HOLD_MS = 2000;
-
-function UtilityButtons({ onSuper, onUtilityButton, role }) {
-  const superHold = useHoldTrigger(onSuper, UTILITY_HOLD_MS);
-  const utilityHold = useHoldTrigger(() => onUtilityButton(role), UTILITY_HOLD_MS);
+function UtilityButtons({ role, superHold, utilityHold, disabled = false }) {
 
   useEffect(() => {
     function handleKeyDown(e) {
+      if (disabled) return;
+
       if (e.key.toLowerCase() === "r") {
         superHold.startHold();
       }
@@ -34,6 +31,7 @@ function UtilityButtons({ onSuper, onUtilityButton, role }) {
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [
+    disabled,
     superHold.startHold,
     superHold.cancelHold,
     utilityHold.startHold,
@@ -41,6 +39,8 @@ function UtilityButtons({ onSuper, onUtilityButton, role }) {
   ]);
 
   if (!role) return <Loading />;
+
+  const buttonClass = "relative z-10 p-2 rounded border-2 text-white text-center w-24 border-gray-600 bg-gray-800";
 
   return (
     <div className="flex gap-3 mt-4">
@@ -59,8 +59,12 @@ function UtilityButtons({ onSuper, onUtilityButton, role }) {
         />
         <button
           type="button"
-          className="relative z-10 p-2 rounded border-2 cursor-pointer text-white text-center w-24 border-gray-600 bg-gray-800"
-          onMouseDown={superHold.startHold}
+          disabled={disabled}
+          className={`${buttonClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          onMouseDown={() => {
+            if (disabled) return;
+            superHold.startHold();
+          }}
           onMouseUp={superHold.cancelHold}
           onMouseLeave={superHold.cancelHold}
         >
@@ -85,8 +89,12 @@ function UtilityButtons({ onSuper, onUtilityButton, role }) {
         />
         <button
           type="button"
-          className="relative z-10 p-2 rounded border-2 cursor-pointer text-white text-center w-24 border-gray-600 bg-gray-800"
-          onMouseDown={utilityHold.startHold}
+          disabled={disabled}
+          className={`${buttonClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          onMouseDown={() => {
+            if (disabled) return;
+            utilityHold.startHold();
+          }}
           onMouseUp={utilityHold.cancelHold}
           onMouseLeave={utilityHold.cancelHold}
         >

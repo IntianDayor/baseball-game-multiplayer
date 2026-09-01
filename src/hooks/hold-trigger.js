@@ -10,6 +10,11 @@ export function useHoldTrigger (callback, durationMs) {
     const isHoldingRef = useRef(false);
     const rafRef = useRef(null);
     const startTimeRef = useRef(null);
+    const callbackRef = useRef(null);
+
+    useEffect(() => {
+        callbackRef.current = callback;
+    });
 
     function animateProgress() {
         const elapsed = Date.now() - startTimeRef.current;
@@ -30,7 +35,7 @@ export function useHoldTrigger (callback, durationMs) {
         startTimeRef.current = Date.now();
 
         holdTimeOutRef.current = setTimeout(() => {
-            callback()
+            callbackRef.current()
             resetHoldState()
         }, durationMs);
 
