@@ -8,7 +8,8 @@ import {
     effectivePitchSpeed,
     getTrajectory,
     getTimingQuality,
-    VERY_LATE_THRESHOLD_MS
+    VERY_LATE_THRESHOLD_MS,
+    getHitDepth
 } from "../utils/engines/hit-calculator";
 import { rollFielder } from "../utils/engines/fielder";
 import {
@@ -338,6 +339,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         const hitTrajectory = getTrajectory(verticalOffset, hitZone);
 
+                        const hitDepth = getHitDepth(distance, hitZone, hitTrajectory);
+
                         const hitType = isHit
                             ? determineHitType(
                                 distance,
@@ -357,7 +360,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             isHit &&
                             ['single', 'double', 'homerun'].includes(hitType)
                         ) {
-                            const fielderRoll = rollFielder(hitType, selected);
+                            const fielderRoll = rollFielder(hitType, selected, {
+                                hitDepth,
+                            });
                             finalResult = fielderRoll.result;
                         }
 
@@ -369,6 +374,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         });
                         setHint(null);
                         setIsBallFlying(false);
+                        setStrikeZoneVisible(true);
                         isBallFlyingRef.current = false;
 
                         if (rafRef.current) cancelAnimationFrame(rafRef.current);
