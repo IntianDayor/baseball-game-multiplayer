@@ -22,6 +22,7 @@ function App() {
     const [scoreHome, setScoreHome] = useState(0);
     const [scoreAway, setScoreAway] = useState(0);
 
+    // Client Session ID
     useEffect(() => {
         async function init() {
             const id = await ensureSession();
@@ -29,55 +30,73 @@ function App() {
         }
 
         init();
-        
     }, []);
 
-    console.log(uid);
+    /* Screen Selector */
+    const renderScreen = () => {
+        if (!uid) return <Loading />;
+        
+        switch (screen) {
+            case 'menu':
+                return <MainMenu setScreen={setScreen} />;
+            case 'lobby':
+                return (
+                    <Lobby
+                        setScreen={setScreen}
+                        isHost={isHost}
+                        setIsHost={setIsHost}
+                        roomCode={roomCode}
+                        setRoomCode={setRoomCode}
+                        uid={uid}
+                    />
+                );
+            case 'game':
+                return (
+                    <Game
+                        setScreen={setScreen}
+                        uid={uid}
+                        bats={bats}
+                        myPitches={myPitches}
+                        setMyPitches={setMyPitches}
+                        opponentPitches={opponentPitches}
+                        setOpponentPitches={setOpponentPitches}
+                        setSelected={setSelected}
+                        selected={selected}
+                        isHost={isHost}
+                        roomCode={roomCode}
+                        setScoreAway={setScoreAway}
+                        setScoreHome={setScoreHome}
+                        scoreAway={scoreAway}
+                        scoreHome={scoreHome}
+                    />
+                );
+            case 'gameover':
+                return (
+                    <GameOver
+                        setScreen={setScreen}
+                        roomCode={roomCode}
+                        scoreHome={scoreHome}
+                        scoreAway={scoreAway}
+                        isHost={isHost}
+                    />
+                );
+            default:
+                return <Loading />;
+        }
+    };
 
-    /* Screen Handler */
-    if (!uid) return <Loading />
+    return (
+        <div className="relative min-h-screen">
+            {/* Screen Content */}
+            {renderScreen()}
 
-    if (screen === 'menu') return <MainMenu 
-        setScreen={setScreen} 
-    />
-
-    if (screen === 'lobby') return <Lobby
-        setScreen={setScreen}
-        isHost={isHost}
-        setIsHost={setIsHost}
-        roomCode={roomCode}
-        setRoomCode={setRoomCode}
-        uid={uid}
-    />
-    /* Main Game */
-    if (screen === 'game') return <Game
-        setScreen={setScreen}
-        uid={uid}
-        bats={bats}
-        myPitches={myPitches}
-        setMyPitches={setMyPitches}
-        opponentPitches={opponentPitches}
-        setOpponentPitches={setOpponentPitches}
-        setSelected={setSelected}
-        selected={selected}
-        isHost={isHost}
-        roomCode={roomCode}
-        setScoreAway={setScoreAway}
-        setScoreHome={setScoreHome}
-        scoreAway={scoreAway}
-        scoreHome={scoreHome}
-    />
-
-    /* Game Over */
-    if (screen === 'gameover') return <GameOver
-        setScreen={setScreen}
-        roomCode={roomCode}
-        scoreHome={scoreHome}
-        scoreAway={scoreAway}
-        isHost={isHost}
-    />
-
-    return <Loading />
+            {/* Persistent Build Version Overlay */}
+            <div className="fixed bottom-2 right-2 text-xs font-mono text-white/40 select-none pointer-events-none z-50">
+               {/* global __APP_VERSION__ */}
+               Build: {__APP_VERSION__}
+            </div>
+        </div>
+    );
 }
 
 export default App;

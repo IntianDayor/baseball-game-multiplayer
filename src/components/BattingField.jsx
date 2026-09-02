@@ -8,8 +8,8 @@ import {
     effectivePitchSpeed,
     getTrajectory,
     getTimingQuality,
-    BALL_HIT_RADIUS,
-    VERY_LATE_THRESHOLD_MS
+    VERY_LATE_THRESHOLD_MS,
+    getHitDepth
 } from "../utils/engines/hit-calculator";
 import { rollFielder } from "../utils/engines/fielder";
 import {
@@ -20,6 +20,7 @@ import {
     BALL_SPRITE
 } from "../utils/engines/sprites";
 import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
+import { clamp, lerp } from "../lib/math";
 
 /* MATH FUNCTIONS */
 
@@ -32,9 +33,6 @@ const HITTABLE_GLOW_MS = 150;
 const MIN_HINT_MS = 400;
 const MAX_HINT_MS = 500;
 const LATE_SWING_BUFFER_MS = 100; // Cushion
-
-const lerp = (a, b, t) => a + (b - a) * t;
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
 const calcReactionTime = (effectiveSpeed) => {
     const speedT = clamp(
@@ -73,14 +71,47 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const animStartTimeRef = useRef(null);
     const incomingPitchRef = useRef(null);
     const hintShrinkingRef = useRef(null);
+    const resolutionInProgressRef = useRef(false);
 
     // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
     const [frameIndex, setFrameIndex] = useState(0);
-    const [glowBrightness, setGlowBrightness] = useState(1);
-    const [isHittableWindow, setIsHittableWindow] = useState(false);
+    const glowBrightness = 1;
+    const isHittableWindow = false;
     const [spinRow, setSpinRow] = useState(0);
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
+    const [hintDuration, setHintDuration] = useState(0);
+
+    // Intentional Walk Listener
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase
+            .channel('walk:' + roomCode)
+            .on('broadcast', { event: 'intentional_walk' }, async () => {
+                if (resolutionInProgressRef.current) return;
+                resolutionInProgressRef.current = true;
+
+                try {
+                    
+                    clearTimeout(autoTakeTimerRef.current);
+                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                    isBallFlyingRef.current = false;
+
+                    setIsBallFlying(false);
+                    setHint(null);
+                    setCanSwing(false);
+                    setStrikeZoneVisible(true);
+
+                    await updateGameState(roomCode, 'walk', false, isHost);
+                } finally {
+                    resolutionInProgressRef.current = false;
+                }
+            })
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [roomCode, isHost]);
 
     // Pitch Listener / Hint Visualizer
     useEffect(() => {
@@ -122,7 +153,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 // Shows hint first then after short delay canSwing is true
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
-                hintDurationRef.current = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
+                const duration = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
+                hintDurationRef.current = duration;
+                setHintDuration(duration);
 
                 if (readDelayRef.current) clearTimeout(readDelayRef.current);
 
@@ -224,30 +257,36 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         const autoTakeDelay = reactionTime + VERY_LATE_THRESHOLD_MS + LATE_SWING_BUFFER_MS;
 
         autoTakeTimerRef.current = setTimeout(async () => {
+            if (resolutionInProgressRef.current) return;
+            resolutionInProgressRef.current = true;
 
-            setCanSwing(false)
-            setPitchTaken(true); // Timer Expired
-            setLastPitchLocation({
-                x: incomingPitch.final_x,
-                y: incomingPitch.final_y
-            });
-            setHint(null);
-            setIsBallFlying(false);
-            setStrikeZoneVisible(true);
-            isBallFlyingRef.current = false;
+            try {
+                setCanSwing(false)
+                setPitchTaken(true); // Timer Expired
+                setLastPitchLocation({
+                    x: incomingPitch.final_x,
+                    y: incomingPitch.final_y
+                });
+                setHint(null);
+                setIsBallFlying(false);
+                setStrikeZoneVisible(true);
+                isBallFlyingRef.current = false;
 
-            if (rafRef.current) cancelAnimationFrame(rafRef.current);
+                if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-            const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
+                const result = incomingPitch.is_strike ? 'called_strike' : 'ball';
 
-            await swingAt(incomingPitch.id, roomCode, {
-                swing_x: null,
-                swing_y: null,
-                swing_type: null,
-                result
-            });
+                await swingAt(incomingPitch.id, roomCode, {
+                    swing_x: null,
+                    swing_y: null,
+                    swing_type: null,
+                    result
+                });
 
-            await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
+                await updateGameState(roomCode, result, incomingPitch.is_strike, isHost);
+            } finally {
+                resolutionInProgressRef.current = false;
+            }
 
         }, autoTakeDelay);
 
@@ -273,72 +312,83 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 onClick={async () => {
 
                     if (!canSwing || !incomingPitch || !pitchStartTime) return;
+                    if (resolutionInProgressRef.current) return;
+                    resolutionInProgressRef.current = true;
 
-                    const pitchData = pitches[incomingPitch.pitch_type];
-                    const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
+                    try {
+                        const pitchData = pitches[incomingPitch.pitch_type];
+                        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
 
-                    const swingAtTime = Date.now();
-                    setCanSwing(false);
+                        const swingAtTime = Date.now();
+                        setCanSwing(false);
 
-                    const timingOffset = swingAtTime - pitchStartTime;
+                        const timingOffset = swingAtTime - pitchStartTime;
 
-                    setTimingQuality(getTimingQuality(timingOffset, reactionTimeRef.current));
+                        setTimingQuality(getTimingQuality(timingOffset, reactionTimeRef.current));
 
-                    clearTimeout(autoTakeTimerRef.current);
+                        clearTimeout(autoTakeTimerRef.current);
 
-                    const distance = Math.sqrt(
-                        Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
-                        Math.pow(cursorPos.y - incomingPitch.final_y, 2)
-                    );
+                        const distance = Math.sqrt(
+                            Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
+                            Math.pow(cursorPos.y - incomingPitch.final_y, 2)
+                        );
 
-                    const verticalOffset = cursorPos.y - incomingPitch.final_y;
+                        const verticalOffset = cursorPos.y - incomingPitch.final_y;
 
-                    const isHit = distance <= hitZone;
+                        const isHit = distance <= hitZone;
 
-                    const hitTrajectory = getTrajectory(verticalOffset, hitZone);
+                        const hitTrajectory = getTrajectory(verticalOffset, hitZone);
 
-                    const hitType = isHit
-                        ? determineHitType(
-                            distance,
-                            hitZone,
-                            hitTrajectory,
-                            timingOffset,
-                            reactionTimeRef.current,
-                            effectiveSpeed,
-                            incomingPitch.movement_scale,
-                            selected,
-                        )
-                        : null;
+                        const hitDepth = getHitDepth(distance, hitZone, hitTrajectory);
 
-                    // Roll fielder if it's a hit and not a foul
-                    let finalResult = isHit ? hitType : 'swing_miss'
-                    if (
-                        isHit &&
-                        ['single', 'double', 'homerun'].includes(hitType)
-                    ) {
-                        const fielderRoll = rollFielder(hitType, selected);
-                        finalResult = fielderRoll.result;
+                        const hitType = isHit
+                            ? determineHitType(
+                                distance,
+                                hitZone,
+                                hitTrajectory,
+                                timingOffset,
+                                reactionTimeRef.current,
+                                effectiveSpeed,
+                                incomingPitch.movement_scale,
+                                selected,
+                            )
+                            : null;
+
+                        // Roll fielder if it's a hit and not a foul
+                        let finalResult = isHit ? hitType : 'swing_miss'
+                        if (
+                            isHit &&
+                            ['single', 'double', 'homerun'].includes(hitType)
+                        ) {
+                            const fielderRoll = rollFielder(hitType, selected, {
+                                hitDepth,
+                            });
+                            finalResult = fielderRoll.result;
+                        }
+
+                        // After Swing
+                        setSwingResult(finalResult);
+                        setLastPitchLocation({
+                            x: incomingPitch.final_x,
+                            y: incomingPitch.final_y
+                        });
+                        setHint(null);
+                        setIsBallFlying(false);
+                        setStrikeZoneVisible(true);
+                        isBallFlyingRef.current = false;
+
+                        if (rafRef.current) cancelAnimationFrame(rafRef.current);
+
+                        await swingAt(incomingPitch.id, roomCode, {
+                            swing_x: cursorPos.x,
+                            swing_y: cursorPos.y,
+                            swing_type: selected,
+                            result: finalResult
+                        });
+                        await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
+                    } finally {
+                        resolutionInProgressRef.current = false;
                     }
-
-                    // After Swing
-                    setSwingResult(finalResult);
-                    setLastPitchLocation({
-                        x: incomingPitch.final_x,
-                        y: incomingPitch.final_y
-                    });
-                    setHint(null);
-                    setIsBallFlying(false);
-                    isBallFlyingRef.current = false;
-
-                    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-                    await swingAt(incomingPitch.id, roomCode, {
-                        swing_x: cursorPos.x,
-                        swing_y: cursorPos.y,
-                        swing_type: selected,
-                        result: finalResult
-                    });
-                    await updateGameState(roomCode, finalResult, incomingPitch.is_strike, isHost);
                 }}
             >
 
@@ -368,11 +418,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             })(),
                             opacity: hintShrinking ? 0 : 1,
                             transition: `
-                                width ${hintDurationRef.current}ms ease-in, 
-                                height ${hintDurationRef.current}ms ease-in, 
-                                left ${hintDurationRef.current}ms ease-in, 
-                                top ${hintDurationRef.current}ms ease-in, 
-                                opacity ${hintDurationRef.current}ms ease-in
+                                width ${hintDuration}ms ease-in, 
+                                height ${hintDuration}ms ease-in, 
+                                left ${hintDuration}ms ease-in, 
+                                top ${hintDuration}ms ease-in, 
+                                opacity ${hintDuration}ms ease-in
                             `,
                         }}
                     />

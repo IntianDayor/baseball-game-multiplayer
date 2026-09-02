@@ -29,5 +29,10 @@ export function applyCountEngine(state, result) {
         balls = 0;
     }
 
+    else if (result === 'walk') {
+        balls  = 0;
+        strikes = 0;
+    }
+
     return { strikes, balls, outs };
 }
