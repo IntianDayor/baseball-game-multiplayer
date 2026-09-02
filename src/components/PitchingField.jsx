@@ -154,6 +154,7 @@ function PitchingField({
                 onChargeStart?.();
                 setIsCharging(true);
             }}
+            // Right Click
             onContextMenu={(e) => {
                 e.preventDefault();
                 handleCancelCharge();

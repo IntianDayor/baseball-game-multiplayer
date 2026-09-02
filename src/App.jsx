@@ -92,8 +92,8 @@ function App() {
 
             {/* Persistent Build Version Overlay */}
             <div className="fixed bottom-2 right-2 text-xs font-mono text-white/40 select-none pointer-events-none z-50">
-               /* global __APP_VERSION__ */
-               {__APP_VERSION__}
+               {/* global __APP_VERSION__ */}
+               Build: {__APP_VERSION__}
             </div>
         </div>
     );
