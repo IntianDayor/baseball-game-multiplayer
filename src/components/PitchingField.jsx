@@ -103,7 +103,7 @@ function PitchingField({
 
         return () => clearInterval(interval);
 
-    }, [isCharging, resetPitchState]);
+    }, [isCharging]);
 
     // Latest Thrown Value
     useEffect(() => {

@@ -1,7 +1,7 @@
 import { useKeySelector } from "../hooks/key-selector";
 
 function PitchSelector({ pitches, selected, setSelected, disabled = false }) {
-    useKeySelector(setSelected);
+    useKeySelector(setSelected, disabled);
 
     if (!pitches) return null;
 
