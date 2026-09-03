@@ -4,6 +4,7 @@ import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
 import { resolvePitchLocation } from "../utils/engines/pitch-resolver";
+import PitchInputHint from "./PitchInputHint";
 
 function PitchingField({
     pitches,
@@ -240,6 +241,12 @@ function PitchingField({
                     left: cursorPos.x - crosshairSize / 2,
                     top: cursorPos.y - crosshairSize / 2,
                 }}
+            />
+            {/* Input Hints */}
+            <PitchInputHint 
+                cursorPos={cursorPos}
+                isCharging={isCharging}
+                hasActivePitch={hasActivePitch}
             />
 
             {/* Power Bar */}
