@@ -61,7 +61,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
 
-    // Timer References
+    // Reference Variables
     const readDelayRef = useRef(null);
     const autoTakeTimerRef = useRef(null);
     const hintDurationRef = useRef(null);
@@ -72,6 +72,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const incomingPitchRef = useRef(null);
     const hintShrinkingRef = useRef(null);
     const resolutionInProgressRef = useRef(false);
+    const fieldRef = useRef(null);
 
     // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
@@ -81,6 +82,12 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [spinRow, setSpinRow] = useState(0);
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
     const [hintDuration, setHintDuration] = useState(0);
+
+    // Mirror X coordinates from Pitching side
+    const mirrorX = (x) => {
+        const fieldWidth = fieldRef.current?.clientWidth ?? 0;
+        return fieldWidth - x;
+    };
 
     // Intentional Walk Listener
     useEffect(() => {
@@ -196,8 +203,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             breakProgress * breakProgress;
 
                         const x = lerp(
-                            incomingPitchRef.current.aim_x,
-                            incomingPitchRef.current.final_x,
+                            mirrorX(incomingPitchRef.current.aim_x),
+                            mirrorX(incomingPitchRef.current.final_x),
                             breakProgress
                         );
 
@@ -264,7 +271,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setCanSwing(false)
                 setPitchTaken(true); // Timer Expired
                 setLastPitchLocation({
-                    x: incomingPitch.final_x,
+                    x: mirrorX(incomingPitch.final_x),
                     y: incomingPitch.final_y
                 });
                 setHint(null);
@@ -299,7 +306,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
     return (
         <>
-            <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
+            <div 
+                ref={fieldRef}
+                className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
                 onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setCursorPos({
@@ -328,12 +337,14 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         clearTimeout(autoTakeTimerRef.current);
 
+                        const finalX = mirrorX(incomingPitch.final_x);
+                        const finalY = incomingPitch.final_y;
                         const distance = Math.sqrt(
-                            Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
-                            Math.pow(cursorPos.y - incomingPitch.final_y, 2)
+                            Math.pow(cursorPos.x - finalX, 2) +
+                            Math.pow(cursorPos.y - finalY, 2)
                         );
 
-                        const verticalOffset = cursorPos.y - incomingPitch.final_y;
+                        const verticalOffset = cursorPos.y - finalY;
 
                         const isHit = distance <= hitZone;
 
@@ -369,7 +380,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         // After Swing
                         setSwingResult(finalResult);
                         setLastPitchLocation({
-                            x: incomingPitch.final_x,
+                            x: mirrorX(incomingPitch.final_x),
                             y: incomingPitch.final_y
                         });
                         setHint(null);
@@ -380,7 +391,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
                         await swingAt(incomingPitch.id, roomCode, {
-                            swing_x: cursorPos.x,
+                            swing_x: mirrorX(cursorPos.x),
                             swing_y: cursorPos.y,
                             swing_type: selected,
                             result: finalResult
@@ -412,7 +423,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                                 return {
                                     width: `${size}px`,
                                     height: `${size}px`,
-                                    left: hint.hint_x - size / 2,
+                                    left: mirrorX(hint.hint_x) - size / 2,
                                     top: hint.hint_y - size / 2,
                                 };
                             })(),
