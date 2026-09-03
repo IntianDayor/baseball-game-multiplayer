@@ -1,8 +1,8 @@
 import rightClickIcon from "../assets/Icons/UI/right-click-1.svg";
 import leftClickIcon from "../assets/Icons/UI/left-click-1.svg";
 
-function PitchInputHint({ cursorPos, crosshairSize, isCharging, hasActivePitch }) {
-  if (hasActivePitch) return null;
+function PitchInputHint({ cursorPos, crosshairSize, isCharging, hasActivePitch, isCursorMoving }) {
+  const isVisible = !hasActivePitch && (isCharging || !isCursorMoving);
 
   const active = isCharging
     ? { icon: rightClickIcon, label: "Cancel", xOffset: +18 }
@@ -12,7 +12,9 @@ function PitchInputHint({ cursorPos, crosshairSize, isCharging, hasActivePitch }
   
   return (
     <div
-      className="absolute pointer-events-none flex flex-col items-center gap-1"
+      className={`absolute pointer-events-none flex flex-col items-center gap-1
+        transition-opacity duration-200 ease-out
+        ${isVisible ? "opacity-100" : "opacity-0"}`}
       style={{
         left: cursorPos.x + active.xOffset,
         top: cursorPos.y + crosshairSize / 2 + gap,

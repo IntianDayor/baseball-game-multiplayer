@@ -1,10 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
-import { resolvePitchLocation } from "../utils/engines/pitch-resolver";
+import { resolveMovement, resolvePitchLocation } from "../utils/engines/pitch-resolver";
 import PitchInputHint from "./PitchInputHint";
+import { clamp } from "../lib/math";
+import BreakIndicator from "./BreakIndicator";
+
+const MAX_BREAK_DOT_OFFSET_PX = 16;
 
 function PitchingField({
     pitches,
@@ -33,9 +37,11 @@ function PitchingField({
     // Reference Variables
     const atMaxSinceRef = useRef(null);
     const thrownRef = useRef(null);
+    const cursorIdleTimeoutRef = useRef(null);
 
     // Visual Variables
-    const crosshairSize = 16 + powerTier * 8
+    const crosshairSize = 32 + powerTier * 8
+    const [isCursorMoving, setIsCursorMoving] = useState(false);
 
     function cancelCharge({ keepCooldown = true } = {}) {
         setIsCharging(false);
@@ -136,16 +142,43 @@ function PitchingField({
         return () => supabase.removeChannel(channel)
     }, [roomCode, resetPitchState]);
 
+    // Cursor idle timer
+    useEffect(() => {
+        return () => clearTimeout(cursorIdleTimeoutRef.current);
+    }, []);
+
+    // BREAK PREVIEW //
+    const breakPreview = useMemo(() => {
+        const pitchData = pitches?.[selected];
+        if (!pitchData) return null;
+        if (pitchData.chaos) return { chaos: true };
+
+        const { moveX, moveY } = resolveMovement(pitchData, powerTier);
+
+        return {
+            dx: clamp(moveX, -MAX_BREAK_DOT_OFFSET_PX, MAX_BREAK_DOT_OFFSET_PX),
+            dy: clamp(moveY, -MAX_BREAK_DOT_OFFSET_PX, MAX_BREAK_DOT_OFFSET_PX),
+            chaos: false,
+        };
+    }, [pitches, selected, powerTier]);
+
     if (!pitches) return <div>Loading pitches...</div>;
 
     return (
-        <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
+        <div className="relative w-64 h-64 bg-green-900 rounded cursor-none"
             onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 setCursorPos({
                     x: e.clientX - rect.left,
                     y: e.clientY - rect.top
                 });
+
+                setIsCursorMoving(true);
+                clearTimeout(cursorIdleTimeoutRef.current);
+
+                cursorIdleTimeoutRef.current = setTimeout(() => {
+                    setIsCursorMoving(false);
+                }, 1000);
             }}
             onMouseDown={(e) => {
                 if (e.button !== 0) return;
@@ -242,13 +275,16 @@ function PitchingField({
                     top: cursorPos.y - crosshairSize / 2,
                     zIndex: "100",
                 }}
-            />
+            >
+                <BreakIndicator {...breakPreview} />
+            </div>
             {/* Input Hints */}
             <PitchInputHint 
                 cursorPos={cursorPos}
                 crosshairSize={crosshairSize}
                 isCharging={isCharging}
                 hasActivePitch={hasActivePitch}
+                isCursorMoving={isCursorMoving}
             />
 
             {/* Power Bar */}
