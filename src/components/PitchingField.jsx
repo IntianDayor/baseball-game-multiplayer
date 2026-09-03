@@ -240,11 +240,13 @@ function PitchingField({
                     height: crosshairSize,
                     left: cursorPos.x - crosshairSize / 2,
                     top: cursorPos.y - crosshairSize / 2,
+                    zIndex: "100",
                 }}
             />
             {/* Input Hints */}
             <PitchInputHint 
                 cursorPos={cursorPos}
+                crosshairSize={crosshairSize}
                 isCharging={isCharging}
                 hasActivePitch={hasActivePitch}
             />
