@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import PitchingField from "./PitchingField";
 import PitchSelector from "./PitchSelector";
 import BattingField from "./BattingField";
 import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
-import Loading from "./Loading";
+import UtilityButtons from "./UtilityButtons";
 import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
+import { useHoldTrigger } from "../hooks/hold-trigger";
+import Loading from "./Loading";
+
+const UTILITY_HOLD_MS = 2000;
 
 function Game({
     setScreen,
@@ -49,6 +53,59 @@ function Game({
         second: false,
         third: false
     });
+    const [hasActivePitch, setHasActivePitch] = useState(false);
+    const [pitchControlsLocked, setPitchControlsLocked] = useState(false);
+    const walkChannelRef = useRef(null);
+    const pitchCooldownRef = useRef(null);
+
+    function beginPitchCharge() {
+        clearTimeout(pitchCooldownRef.current);
+        setPitchControlsLocked(true);
+    }
+
+    function releasePitchCharge(delayMs = 450) {
+        clearTimeout(pitchCooldownRef.current);
+        setPitchControlsLocked(true);
+
+        pitchCooldownRef.current = setTimeout(() => {
+            setPitchControlsLocked(false);
+        }, delayMs);
+    }
+
+    useEffect(() => {
+        return () => clearTimeout(pitchCooldownRef.current);
+    }, []);
+
+    function onSuper() {
+        return undefined;
+    }
+
+    async function onUtilityButton(role) {
+        if (role === "pitcher") {
+            if (hasActivePitch) return;
+
+            await walkChannelRef.current?.send({
+                type: 'broadcast',
+                event: 'intentional_walk',
+                payload: {}
+            });
+        }
+    }
+
+    const superHold = useHoldTrigger(onSuper, UTILITY_HOLD_MS);
+    const utilityHold = useHoldTrigger(() => onUtilityButton(role), UTILITY_HOLD_MS);
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase.channel('walk:' + roomCode);
+        channel.subscribe();
+        walkChannelRef.current = channel;
+
+        return () => {
+            supabase.removeChannel(channel);
+            walkChannelRef.current = null;
+        };
+    }, [roomCode]);
 
     useEffect(() => {
         if (!roomCode) return;
@@ -186,7 +243,7 @@ function Game({
                 >
                     {tossWinner ? (
                         <>
-                            <div>🏆 You Win the Toss! Choose Play Order</div>
+                            <div>You Win the Toss! Choose Play Order</div>
                             <div className="flex gap-4 p-4 m-4">
                                 <button
                                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
@@ -207,7 +264,7 @@ function Game({
                             </div>
                         </>
                     ) : (
-                        <div>😔 You Lost the Toss! Opponent is Choosing Play Order</div>
+                        <div>You Lost the Toss! Opponent is Choosing Play Order</div>
                     )}
                 </div>
             )}
@@ -249,11 +306,24 @@ function Game({
                 inning={inning}
                 scoreHome={scoreHome}
                 scoreAway={scoreAway}
+                hasActivePitch={hasActivePitch}
+                setHasActivePitch={setHasActivePitch}
+                cancelUtilityHold={utilityHold.cancelHold}
+                pitchControlsLocked={pitchControlsLocked}
+                onChargeStart={beginPitchCharge}
+                onChargeRelease={releasePitchCharge}
             />
             <PitchSelector
                 pitches={myPitches}
                 selected={selected}
                 setSelected={setSelected}
+                disabled={pitchControlsLocked}
+            />
+            <UtilityButtons 
+                role={role}
+                superHold={superHold}
+                utilityHold={utilityHold}
+                disabled={pitchControlsLocked}
             />
 
         </div>
@@ -304,11 +374,17 @@ function Game({
                 setSelected={setSelected}
             />
 
+            <UtilityButtons
+                role={role}
+                superHold={superHold}
+                utilityHold={utilityHold}
+            />
+
         </div>
     );
 
     return (
-        <h1>Somethng went wrong... Try to refresh browser!</h1>
+        <Loading />
     );
 }
 

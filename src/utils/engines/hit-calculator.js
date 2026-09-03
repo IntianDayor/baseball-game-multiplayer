@@ -16,6 +16,28 @@ export function getTrajectory(verticalOffset, radius) {
     return 'liner';
 }
 
+export function getHitDepth(distance, radius, trajectory) {
+    const deepThreshold = radius * 1.7;
+    const shallowThreshold = radius * 0.8;
+
+    if (trajectory === 'flyball') {
+        if (distance >= deepThreshold) return 'long';
+        if (distance <= shallowThreshold) return 'short';
+        return 'medium';
+    }
+    
+    if (trajectory === 'grounder') {
+        if (distance >= deepThreshold) return 'long';
+        if (distance <= shallowThreshold) return 'short';
+        return 'medium';
+    }
+
+    // Liners
+    if (distance >= radius * 1.3) return 'long';
+    if (distance <= radius * 0.5) return 'short';
+    return 'medium';
+}
+
 function getContactQuality(distance, radius) {
     if (distance > radius) return 'miss';
     if (distance <= radius * 0.25) return 'perfect';
@@ -58,7 +80,16 @@ function applyTimingModifier(baseResult, timingQuality) {
     return baseResult;
 }
 
-export function determineHitType(distance, radius, trajectory, timingOffset, reactionTime, pitchSpeed, movementScale, swingType) {
+export function determineHitType(
+    distance, 
+    radius, 
+    trajectory, 
+    timingOffset, 
+    reactionTime, 
+    pitchSpeed, 
+    movementScale, 
+    swingType,
+) {
 
     const quality = getContactQuality(distance, radius);
 
@@ -115,8 +146,7 @@ export function determineHitType(distance, radius, trajectory, timingOffset, rea
 
     return applyTimingModifier(baseResult, timingQuality);
 }
-// TODO: Something with pitch speed
-export function effectivePitchSpeed(baseSpeed) {
 
+export function effectivePitchSpeed(baseSpeed) {
     return baseSpeed;
 }

@@ -1,27 +1,81 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import StrikeZone from "./StrikeZone";
 import { throwPitch } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import LastPitchVisual from "./LastPitchVisual";
 import { resolvePitchLocation } from "../utils/engines/pitch-resolver";
+import PitchInputHint from "./PitchInputHint";
 
-function PitchingField({ pitches, selected, roomCode }) {
+function PitchingField({
+    pitches,
+    selected,
+    roomCode,
+    hasActivePitch,
+    setHasActivePitch,
+    cancelUtilityHold,
+    pitchControlsLocked,
+    onChargeStart,
+    onChargeRelease
+}) {
     /* VARIABLES */
-
+    
     // Pitching Logic Variables
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
     const [isCharging, setIsCharging] = useState(false);
     const [powerTier, setPowerTier] = useState(0);
     const [thrown, setThrown] = useState(null);
     const [pitchResult, setPitchResult] = useState(null);
-    const [hasActivePitch, setHasActivePitch] = useState(false);
     const [lastPitchMarker, setLastPitchMarker] = useState(null);
 
     // Animation Variables
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
+    
+    // Reference Variables
+    const atMaxSinceRef = useRef(null);
+    const thrownRef = useRef(null);
+
+    // Visual Variables
+    const crosshairSize = 16 + powerTier * 8
+
+    function cancelCharge({ keepCooldown = true } = {}) {
+        setIsCharging(false);
+        setPowerTier(0);
+        atMaxSinceRef.current = null;
+
+        if (keepCooldown) {
+            onChargeRelease?.();
+        }
+    }
+
+    function handleCancelCharge() {
+        if (!isCharging) return;
+
+        cancelCharge({ keepCooldown: true });
+        cancelUtilityHold?.();
+    }
+    
+    const resetPitchState = useCallback(() => {
+        setHasActivePitch(false);
+        setStrikeZoneVisible(true);
+        setThrown(null);
+        setPitchResult(null);
+    }, [setHasActivePitch]);
+    
+    // Intentional Walk Mechanic
+    useEffect(() => {
+        if (!roomCode) return;
+
+        const channel = supabase
+            .channel('walk:' + roomCode)
+            .on('broadcast', { event: 'intentional_walk' }, () => {
+                resetPitchState();
+            })
+            .subscribe();
+
+        return () => supabase.removeChannel(channel);
+    }, [roomCode, resetPitchState]);
 
     // Power Mechanic
-    const atMaxSinceRef = useRef(null);
     useEffect(() => {
         if (!isCharging) return;
 
@@ -53,7 +107,6 @@ function PitchingField({ pitches, selected, roomCode }) {
     }, [isCharging]);
 
     // Latest Thrown Value
-    const thrownRef = useRef(null);
     useEffect(() => {
         thrownRef.current = thrown;
     }, [thrown]);
@@ -73,17 +126,15 @@ function PitchingField({ pitches, selected, roomCode }) {
                 const swing = payload.new
                 if (swing.result) {
                     setPitchResult(swing.result);
-                    setHasActivePitch(false);
-                    setStrikeZoneVisible(true);
+                    resetPitchState();
 
                     if (thrownRef.current) setLastPitchMarker(thrownRef.current);
-                    setThrown(null);
                 }
             })
             .subscribe()
 
         return () => supabase.removeChannel(channel)
-    }, [roomCode]);
+    }, [roomCode, resetPitchState]);
 
     if (!pitches) return <div>Loading pitches...</div>;
 
@@ -96,13 +147,25 @@ function PitchingField({ pitches, selected, roomCode }) {
                     y: e.clientY - rect.top
                 });
             }}
-            onMouseDown={() => setIsCharging(true)}
-            onMouseUp={async () => {
-                
+            onMouseDown={(e) => {
+                if (e.button !== 0) return;
+                if (pitchControlsLocked || isCharging) return;
+
+                cancelUtilityHold?.();
+                onChargeStart?.();
+                setIsCharging(true);
+            }}
+            // Right Click
+            onContextMenu={(e) => {
+                e.preventDefault();
+                handleCancelCharge();
+            }}
+            onMouseUp={async (e) => {
+                if (e.button !== 0) return;
+                if (!isCharging) return;
+
                 // Pitch Power Reset
-                setIsCharging(false);
-                setPowerTier(0);
-                atMaxSinceRef.current = null;
+                cancelCharge({ keepCooldown: true });
 
                 // Pitching Data
                 if (hasActivePitch) return;
@@ -110,6 +173,9 @@ function PitchingField({ pitches, selected, roomCode }) {
                 setHasActivePitch(true);
 
                 setStrikeZoneVisible(false);
+
+                // Hold Guard
+                cancelUtilityHold?.();
 
                 const pitchData = pitches[selected];
 
@@ -168,11 +234,19 @@ function PitchingField({ pitches, selected, roomCode }) {
             </div>
 
             {/* Crosshair */}
-            <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
+            <div className="absolute border-2 border-white rounded-full pointer-events-none"
                 style={{
-                    left: cursorPos.x - 8,
-                    top: cursorPos.y - 8,
+                    width: crosshairSize,
+                    height: crosshairSize,
+                    left: cursorPos.x - crosshairSize / 2,
+                    top: cursorPos.y - crosshairSize / 2,
                 }}
+            />
+            {/* Input Hints */}
+            <PitchInputHint 
+                cursorPos={cursorPos}
+                isCharging={isCharging}
+                hasActivePitch={hasActivePitch}
             />
 
             {/* Power Bar */}

@@ -16,11 +16,10 @@ export async function createRoom(roomCode, uid) {
             pitch_set_p2: getGamePitches(),
         })
         .select()
-        .single()
+        .single();
 
-    if (error) console.error('createRoom error:', error);
+    if (error) return null;
     return data;
-
 }
 
 export async function joinRoom(roomCode, uid) {
@@ -32,9 +31,9 @@ export async function joinRoom(roomCode, uid) {
         })
         .eq('id', roomCode)
         .select()
-        .single()
+        .single();
 
-    if (error) console.error('joinRoom error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -46,9 +45,9 @@ export async function startGame(roomCode) {
         })
         .select()
         .eq('id', roomCode)
-        .single()
+        .single();
 
-    if (error) console.error('startGame error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -60,9 +59,9 @@ export async function gameOver(roomCode) {
         })
         .select()
         .eq('id', roomCode)
-        .single()
+        .single();
 
-    if (error) console.error('gameOver error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -74,9 +73,9 @@ export async function coinChoice(roomCode, chosenCoin) {
         })
         .select()
         .eq('id', roomCode)
-        .single()
+        .single();
 
-    if (error) console.error('coinChoice error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -88,9 +87,9 @@ export async function updateCoinTossRes(roomCode, coinRes) {
         })
         .select()
         .eq('id', roomCode)
-        .single()
+        .single();
 
-    if (error) console.error('coinTossRes error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -99,9 +98,9 @@ export async function checkRoomStatus(roomCode) {
         .from('rooms')
         .select()
         .eq('id', roomCode)
-        .single()
+        .single();
 
-    if (error) console.error('checkRoomStatus error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -116,9 +115,9 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
         })
         .select()
         .eq('id', roomCode)
-        .single()
+        .single();
 
-    if (error) console.error('updatePlayerRole error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -141,9 +140,9 @@ export async function throwPitch(roomCode, pitchData) {
             thrown_at: pitchData.thrown_at
         }])
         .select()
-        .single()
+        .single();
 
-    if (error) console.error('throwPitch error:', error);
+    if (error) return null;
     return data;
 }
 
@@ -160,10 +159,10 @@ export async function swingAt(pitchId, roomCode, swingData) {
             result: swingData.result
         })
         .select()
-        .single()
+        .single();
 
-    if (error) console.error('swingAt error:', error);
-    return data
+    if (error) return null;
+    return data;
 }
 
 export async function updateGameState(roomCode, result, isStrike, isHost) {
@@ -208,7 +207,7 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         .select()
         .single();
 
-    if (error) console.error("updateGameState error:", error);
+    if (error) return null;
 
     return data;
 }
@@ -228,8 +227,8 @@ export async function swapRoles(roomCode, currentRoleP1) {
         })
         .eq('id', roomCode)
         .select()
-        .single()
+        .single();
 
-    if (error) console.error('swapRoles error:', error);
+    if (error) return null;
     return data;
 }

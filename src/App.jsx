@@ -10,11 +10,11 @@ import { ensureSession } from "./lib/supabase";
 function App() {
     const [screen, setScreen] = useState('menu');
     const [selected, setSelected] = useState('Q');
-    
+
     const [isHost, setIsHost] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [uid, setUid] = useState(null);
-    
+
     const [myPitches, setMyPitches] = useState(null);
     const [bats] = useState(() => getGameBats());
     const [opponentPitches, setOpponentPitches] = useState(null);
@@ -28,51 +28,61 @@ function App() {
         }
 
         init();
-        
     }, []);
 
-    console.log(uid);
+    const renderScreen = () => {
+        if (!uid) return <Loading />;
 
-    if (!uid) return <Loading />
+        switch (screen) {
+            case 'menu':
+                return <MainMenu setScreen={setScreen} />;
+            case 'lobby':
+                return (
+                    <Lobby
+                        setScreen={setScreen}
+                        isHost={isHost}
+                        setIsHost={setIsHost}
+                        roomCode={roomCode}
+                        setRoomCode={setRoomCode}
+                        uid={uid}
+                    />
+                );
+            case 'game':
+                return (
+                    <Game
+                        setScreen={setScreen}
+                        uid={uid}
+                        bats={bats}
+                        myPitches={myPitches}
+                        setMyPitches={setMyPitches}
+                        opponentPitches={opponentPitches}
+                        setOpponentPitches={setOpponentPitches}
+                        setSelected={setSelected}
+                        selected={selected}
+                        isHost={isHost}
+                        roomCode={roomCode}
+                        setScoreAway={setScoreAway}
+                        setScoreHome={setScoreHome}
+                        scoreAway={scoreAway}
+                        scoreHome={scoreHome}
+                    />
+                );
+            case 'gameover':
+                return (
+                    <GameOver
+                        setScreen={setScreen}
+                        roomCode={roomCode}
+                        scoreHome={scoreHome}
+                        scoreAway={scoreAway}
+                        isHost={isHost}
+                    />
+                );
+            default:
+                return <Loading />;
+        }
+    };
 
-    if (screen === 'menu') return <MainMenu 
-        setScreen={setScreen} 
-    />
-    if (screen === 'lobby') return <Lobby
-        setScreen={setScreen}
-        isHost={isHost}
-        setIsHost={setIsHost}
-        roomCode={roomCode}
-        setRoomCode={setRoomCode}
-        uid={uid}
-    />
-    if (screen === 'game') return <Game
-        setScreen={setScreen}
-        uid={uid}
-        bats={bats}
-        myPitches={myPitches}
-        setMyPitches={setMyPitches}
-        opponentPitches={opponentPitches}
-        setOpponentPitches={setOpponentPitches}
-        setSelected={setSelected}
-        selected={selected}
-        isHost={isHost}
-        roomCode={roomCode}
-        setScoreAway={setScoreAway}
-        setScoreHome={setScoreHome}
-        scoreAway={scoreAway}
-        scoreHome={scoreHome}
-    />
-
-    if (screen === 'gameover') return <GameOver
-        setScreen={setScreen}
-        roomCode={roomCode}
-        scoreHome={scoreHome}
-        scoreAway={scoreAway}
-        isHost={isHost}
-    />
-
-    return <Loading />
+    return <div className="relative min-h-screen">{renderScreen()}</div>;
 }
 
 export default App;
