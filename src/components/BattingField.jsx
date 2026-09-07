@@ -403,7 +403,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 }}
             >
 
-                {/* Contact point - Testing */}
+                {/* Contact point */}
                 <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                     style={{
                         width: `${hitZone * 2}px`,
@@ -490,6 +490,12 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         {swingResult === 'swing_miss' && 'MISS!'}
                         {swingResult === 'foul' && 'FOUL!'}
                         {swingResult === 'sac_bunt' && 'SACRIFICIAL BUNT!'}
+                        <div 
+                            className="text-white text-xs"
+                        >
+                            {/* Temp Timing Quality Visual */}
+                            {timingQuality}
+                        </div>
                     </div>
                 )}
                 {pitchTaken && (
@@ -508,8 +514,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 </div>
 
             </div>
-            {/* Temp Bat timing teller */}
-            <div className="text-white text-xs text-center">{timingQuality}</div>
         </>
     );
 }

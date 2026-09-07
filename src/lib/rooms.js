@@ -209,9 +209,21 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         
         const completedFrame = current.inning_frame;
         const inningComplete = state.outs >= 3;
+
+        const runScored =
+            state.score_home !== current.score_home ||
+            state.score_away !== current.score_away;
+
+        const walkOffRun =
+            current.inning === 9 &&
+            current.inning_frame === 'bottom' &&
+            runScored &&
+            state.score_home !== state.score_away;
+
         const gameIsOver =
-        extraInningRunScored ||
-        (inningComplete && shouldEndGame(state, completedFrame));
+            extraInningRunScored ||
+            walkOffRun ||
+            (inningComplete && shouldEndGame(state, completedFrame));
         
     const inning = gameIsOver
     ? { state, swapped: false }
