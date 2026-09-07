@@ -51,9 +51,6 @@ export async function startGame(roomCode) {
     return data;
 }
 
-// =============== COIN TOSS MECHANIC =============== //
-
-// CHOSEN COIN
 export async function coinChoice(roomCode, chosenCoin) {
     const { data, error } = await supabase
         .from('rooms')
