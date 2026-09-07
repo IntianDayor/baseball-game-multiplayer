@@ -86,7 +86,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
     // Mirror X coordinates from Pitching side
     const mirrorX = (x) => {
-        return fieldWidth - x;
+        const width = fieldWidth || fieldRef.current?.clientWidth || 0;
+        return width - x;
     };
 
     useEffect(() => {
