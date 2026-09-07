@@ -14,7 +14,7 @@ export async function createRoom(roomCode, uid) {
         .insert({
             id: roomCode,
             status: 'waiting',
-            player1_id: roomCode + uid + '_p1',
+            player1_id: roomCode + '_' + uid + '_p1',
             pitch_set_p1: getGamePitches(),
             pitch_set_p2: getGamePitches(),
         })
@@ -31,7 +31,7 @@ export async function joinRoom(roomCode, uid) {
     const { data, error } = await supabase
         .from('rooms')
         .update({
-            player2_id: roomCode + uid + '_p2',
+            player2_id: roomCode + '_' + uid + '_p2',
             status: 'active'
         })
         .eq('id', roomCode)
