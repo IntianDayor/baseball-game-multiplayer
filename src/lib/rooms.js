@@ -108,13 +108,13 @@ export async function checkRoomStatus(roomCode) {
 
 // UPDATE ROLE
 export async function updatePlayerRole(roomCode, chosenRole, isHost) {
-    const oppposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
+    const opposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
 
     const { data, error } = await supabase
         .from('rooms')
         .update({
-            current_role_p1: isHost ? chosenRole : oppposite,
-            current_role_p2: isHost ? oppposite : chosenRole
+            current_role_p1: isHost ? chosenRole : opposite,
+            current_role_p2: isHost ? opposite : chosenRole
         })
         .select()
         .eq('id', roomCode)
