@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from "react";
-import PitchingField from "./PitchingField";
-import PitchSelector from "./PitchSelector";
-import BattingField from "./BattingField";
-import BattingSelector from "./BattingSelector";
-import ScoreBoard from "./ScoreBoard";
-import MiniMap from "./MiniMap";
-import UtilityButtons from "./UtilityButtons";
+import PitchingField from "./Game/PitchingField";
+import PitchSelector from "./UI/pitcher/PitchSelector";
+import BattingField from "./Game/BattingField";
+import BattingSelector from "./UI/batter/BattingSelector";
+import ScoreBoard from "./UI/general/ScoreBoard";
+import MiniMap from "./UI/general/MiniMap";
+import UtilityButtons from "./UI/general/UtilityButtons";
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
-import Loading from "./Loading";
+import Loading from "./Game/Loading";
 
 const UTILITY_HOLD_MS = 2000;
 

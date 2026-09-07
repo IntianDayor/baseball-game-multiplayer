@@ -1,6 +1,6 @@
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { useState, useEffect } from "react";
-import { createRoom, joinRoom, startGame } from "../lib/rooms";
+import { createRoom, joinRoom, startGame } from "../../lib/rooms";
 
 function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode, uid }) {
     // Generates the Room Code
