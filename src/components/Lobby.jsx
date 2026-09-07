@@ -131,7 +131,9 @@ function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode, uid }) {
                             setError('Room not found!');
                         } else {
                             setRoomCode(joinInput);
-                            setMode('waiting');
+                            setTimeout(() => {
+                                setMode('waiting');
+                            }, 300);
                             setIsHost(false);
                         }
                     }}

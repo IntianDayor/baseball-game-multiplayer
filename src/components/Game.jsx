@@ -6,7 +6,8 @@ import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
 import UtilityButtons from "./UtilityButtons";
-import { coinChoice, gameOver, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import DevSettings from "./DevSettings";
+import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
 import Loading from "./Loading";
@@ -63,6 +64,7 @@ function Game({
     const [pitchControlsLocked, setPitchControlsLocked] = useState(false);
     const walkChannelRef = useRef(null);
     const pitchCooldownRef = useRef(null);
+    const teamSide = isHost ? 'Home' : 'Away';
 
     function beginPitchCharge() {
         clearTimeout(pitchCooldownRef.current);
@@ -137,6 +139,13 @@ function Game({
             }, (payload) => {
                 const room = payload.new
 
+                if (room.status === 'gameover') {
+                    setScoreHome(room.score_home);
+                    setScoreAway(room.score_away);
+                    setScreen('gameover');
+                    return;
+                }
+
                 /* Role Assignment & Pitch Assignment */
 
                 // Coin Toss Result
@@ -191,14 +200,6 @@ function Game({
                     third: room.runner_third ?? false
                 });
 
-                // END GAME
-                if (room.inning > 9) {
-                    async function endGame() {
-                        await gameOver(roomCode)
-                        setScreen('gameover')
-                    }
-                    if (room.score_home > room.score_away || room.score_away > room.score_home) endGame();
-                }
             })
             .subscribe()
 
@@ -330,7 +331,7 @@ function Game({
             {/* Current Role */}
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
-                Pitching
+                Pitching ({teamSide})
             </div>
 
             <PitchingField
@@ -392,7 +393,7 @@ function Game({
             {/* Current Role */}
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
-                Batting
+                Batting ({teamSide})
             </div>
 
             <BattingField

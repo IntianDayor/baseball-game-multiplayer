@@ -58,3 +58,22 @@ export function formatInning(inning, inningFrame) {
     : `${inningFrame.toUpperCase()} OF THE ${inning}${suffix.toUpperCase()}`;
 
 }
+
+export function shouldEndGame(state, completedFrame) {
+    const { inning, score_home, score_away } = state;
+
+    if (inning < 9) return false;
+
+    // Top of the 9th: home is defending.
+    // If home already leads, the away team cannot bat again.
+    if (completedFrame === 'top') {
+        return inning === 9 && score_home > score_away;
+    }
+
+    // Bottom of the 9th or later: game ends if teams are no longer tied.
+    if (completedFrame === 'bottom') {
+        return score_home !== score_away;
+    }
+
+    return false;
+}
