@@ -51,20 +51,9 @@ export async function startGame(roomCode) {
     return data;
 }
 
-export async function gameOver(roomCode) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            status: 'gameover'
-        })
-        .select()
-        .eq('id', roomCode)
-        .single();
+// =============== COIN TOSS MECHANIC =============== //
 
-    if (error) return null;
-    return data;
-}
-
+// CHOSEN COIN
 export async function coinChoice(roomCode, chosenCoin) {
     const { data, error } = await supabase
         .from('rooms')
@@ -105,13 +94,13 @@ export async function checkRoomStatus(roomCode) {
 }
 
 export async function updatePlayerRole(roomCode, chosenRole, isHost) {
-    const oppposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher';
+    const opposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
 
     const { data, error } = await supabase
         .from('rooms')
         .update({
-            current_role_p1: isHost ? chosenRole : oppposite,
-            current_role_p2: isHost ? oppposite : chosenRole
+            current_role_p1: isHost ? chosenRole : opposite,
+            current_role_p2: isHost ? opposite : chosenRole
         })
         .select()
         .eq('id', roomCode)
@@ -182,13 +171,7 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         ...applyRunnerEngine(state, result, isHost)
     };
 
-    const extraInningRunScored =
-        state.inning > 9 &&
-        (
-            state.score_home !== current.score_home ||
-            state.score_away !== current.score_away
-        );
-
+    // Inning / Inning Frame Manager
         const completedFrame = current.inning_frame;
         const inningComplete = state.outs >= 3;
 
@@ -196,16 +179,13 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
             state.score_home !== current.score_home ||
             state.score_away !== current.score_away;
 
-        const walkOffRun =
-            current.inning === 9 &&
+        const isWalkOff = 
+            current.inning >= 9 &&
             current.inning_frame === 'bottom' &&
             runScored &&
-            state.score_home !== state.score_away;
+            state.score_home > state.score_away;
 
-        const gameIsOver =
-            extraInningRunScored ||
-            walkOffRun ||
-            (inningComplete && shouldEndGame(state, completedFrame));
+        const gameIsOver = isWalkOff || (inningComplete && shouldEndGame(state, completedFrame))
         
     const inning = gameIsOver
     ? { state, swapped: false }

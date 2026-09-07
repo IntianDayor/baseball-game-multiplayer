@@ -1,4 +1,4 @@
-import { shuffleArary } from "../lib/math";
+import { shuffleArray } from "../lib/math";
 
 const SPIN_PROFILES = {
   BACKSPIN: {
@@ -228,7 +228,8 @@ export function getGamePitches() {
 
     const pool = Object.values(PITCH_LIBRARY).filter(p => !p.fixed);
 
-    const shuffled = shuffleArary(pool);
+    // Shuffle pool
+    const shuffled = shuffleArray(pool);
 
     return {
         Q: {...fixed, key: "Q" },
