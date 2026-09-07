@@ -1,8 +1,8 @@
-import MainMenu from "./components/MainMenu";
-import Lobby from "./components/Lobby";
+import MainMenu from "./components/Game/MainMenu";
+import Lobby from "./components/Game/Lobby";
 import Game from "./components/Game";
-import Loading from "./components/Loading";
-import GameOver from "./components/GameOver";
+import Loading from "./components/Game/Loading";
+import GameOver from "./components/Game/GameOver";
 import { getGameBats } from "./data/bats";
 import { useEffect, useState } from "react";
 import { ensureSession } from "./lib/supabase";

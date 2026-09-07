@@ -1,4 +1,4 @@
-import { useKeySelector } from "../hooks/key-selector";
+import { useKeySelector } from "../../../hooks/key-selector";
 
 function PitchSelector({ pitches, selected, setSelected, disabled = false }) {
     useKeySelector(setSelected, disabled);

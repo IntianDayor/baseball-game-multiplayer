@@ -1,5 +1,5 @@
-import rightClickIcon from "../assets/Icons/UI/right-click-1.svg";
-import leftClickIcon from "../assets/Icons/UI/left-click-1.svg";
+import rightClickIcon from "../../../assets/Icons/UI/right-click-1.svg";
+import leftClickIcon from "../../../assets/Icons/UI/left-click-1.svg";
 
 function PitchInputHint({ cursorPos, crosshairSize, isCharging, hasActivePitch, isCursorMoving }) {
   const isVisible = !hasActivePitch && (isCharging || !isCursorMoving);

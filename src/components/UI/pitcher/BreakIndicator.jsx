@@ -1,4 +1,4 @@
-import chaosIndicator from "../assets/Icons/UI/circle-wavy-thin-svgrepo-com.svg";
+import chaosIndicator from "../../../assets/Icons/UI/circle-wavy-thin-svgrepo-com.svg";
 
 function BreakIndicator({ dx = 0, dy = 0, chaos = false }) {
   if (chaos) {

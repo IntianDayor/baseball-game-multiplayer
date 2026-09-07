@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { PITCH_LIBRARY } from "../data/pitches";
-import { forceGameOver, updateDevGameState, updateDevPitchSet } from "../lib/rooms";
+import { PITCH_LIBRARY } from "../../data/pitches";
+import { forceGameOver, updateDevGameState, updateDevPitchSet } from "../../lib/rooms";
 
 const SPIN_TYPES = ['BACKSPIN', 'TOPSPIN', 'SIDESPIN', 'COMBINED', 'UNSTABLE'];
 
