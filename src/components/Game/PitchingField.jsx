@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import StrikeZone from "./StrikeZone";
-import { throwPitch } from "../lib/rooms";
-import { supabase } from "../lib/supabase";
-import LastPitchVisual from "./LastPitchVisual";
-import { resolveMovement, resolvePitchLocation } from "../utils/engines/pitch-resolver";
-import PitchInputHint from "./PitchInputHint";
-import { clamp } from "../lib/math";
-import BreakIndicator from "./BreakIndicator";
+import StrikeZone from "../UI/general/StrikeZone";
+import { throwPitch } from "../../lib/rooms";
+import { supabase } from "../../lib/supabase";
+import LastPitchVisual from "../UI/general/LastPitchVisual";
+import { resolveMovement, resolvePitchLocation } from "../../utils/engines/pitch-resolver";
+import PitchInputHint from "../UI/pitcher/PitchInputHint";
+import { clamp } from "../../lib/math";
+import BreakIndicator from "../UI/pitcher/BreakIndicator";
 
 const MAX_BREAK_DOT_OFFSET_PX = 16;
 

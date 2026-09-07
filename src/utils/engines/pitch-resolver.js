@@ -69,11 +69,11 @@ export function resolvePitchLocation(pitch, { aim_x, aim_y, power = 0 }) {
   const predictedX = aim_x + moveX * hintBias;
   const predictedY = aim_y + moveY * hintBias;
   
-  let hintRadius;
-
-  if (chaos) hintRadius = 38;
-  else if (disguised) hintRadius = 6;
-  else hintRadius = clamp(10 + breakMagnitude * 2.2, 8, 26);
+  const hintRadius = chaos
+    ? 38
+    : disguised
+      ? 6
+      : clamp(10 + breakMagnitude * 2.2, 8, 26);
 
   return {
     hint_x: predictedX,

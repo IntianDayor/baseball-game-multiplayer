@@ -1,4 +1,4 @@
-import { formatInning } from "../utils/engines/innings";
+import { formatInning } from "../../../utils/engines/innings";
 
 function CountIndicator({ count, max, activeColor }) {
     return (

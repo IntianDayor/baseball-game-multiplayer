@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import Loading from "./Loading";
+import Loading from "../../Game/Loading";
 
 function UtilityButtons({ role, superHold, utilityHold, disabled = false }) {
 

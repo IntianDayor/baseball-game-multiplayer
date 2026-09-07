@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import StrikeZone from "./StrikeZone";
-import LastPitchVisual from "./LastPitchVisual";
-import { supabase } from "../lib/supabase";
-import { swingAt, updateGameState } from "../lib/rooms";
+import StrikeZone from "../UI/general/StrikeZone";
+import LastPitchVisual from "../UI/general/LastPitchVisual";
+import { supabase } from "../../lib/supabase";
+import { swingAt, updateGameState } from "../../lib/rooms";
 import {
     determineHitType,
     effectivePitchSpeed,
@@ -10,18 +10,17 @@ import {
     getTimingQuality,
     VERY_LATE_THRESHOLD_MS,
     getHitDepth
-} from "../utils/engines/hit-calculator";
-import { rollFielder } from "../utils/engines/fielder";
+} from "../../utils/engines/hit-calculator";
+import { rollFielder } from "../../utils/engines/fielder";
 import {
     getFrames,
     getScaledSpritePosition,
     getSpinRow,
     BALL_DISPLAY_SIZE,
     BALL_SPRITE
-} from "../utils/engines/sprites";
-import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
-import { clamp, lerp } from "../lib/math";
-
+} from "../../utils/engines/sprites";
+import ballSprite from "../../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
+import { clamp, lerp } from "../../lib/math";
 
 const MIN_REACTION_MS = 1000;
 const MAX_REACTION_MS = 2000;
@@ -77,18 +76,21 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [hintDuration, setHintDuration] = useState(0);
     const [fieldWidth, setFieldWidth] = useState(0);
 
-    useEffect(() => {
-        const updateFieldWidth = () => setFieldWidth(fieldRef.current?.clientWidth ?? 0);
-        updateFieldWidth();
-        window.addEventListener("resize", updateFieldWidth);
-
-        return () => window.removeEventListener("resize", updateFieldWidth);
-    }, []);
-
     const mirrorX = (x) => {
         return fieldWidth - x;
     };
 
+    useEffect(() => {
+        const updateFieldWidth = () => setFieldWidth(fieldRef.current?.clientWidth ?? 0);
+        const resizeObserver = new ResizeObserver(updateFieldWidth);
+
+        updateFieldWidth();
+        if (fieldRef.current) resizeObserver.observe(fieldRef.current);
+
+        return () => resizeObserver.disconnect();
+    }, []);
+
+    // Intentional Walk Listener
     useEffect(() => {
         if (!roomCode) return;
 
