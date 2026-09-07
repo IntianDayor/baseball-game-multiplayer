@@ -32,7 +32,6 @@ export function getHitDepth(distance, radius, trajectory) {
         return 'medium';
     }
 
-    // Liners
     if (distance >= radius * 1.3) return 'long';
     if (distance <= radius * 0.5) return 'short';
     return 'medium';

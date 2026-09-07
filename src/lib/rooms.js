@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { getGamePitches } from '../data/pitches';
 import { applyCountEngine } from '../utils/engines/counts';
-import { applyInningEngine } from '../utils/engines/innings';
+import { applyInningEngine, shouldEndGame } from '../utils/engines/innings';
 import { applyRunnerEngine } from '../utils/engines/runners';
 import { applyWalkEngine } from '../utils/engines/walks';
 
@@ -11,7 +11,7 @@ export async function createRoom(roomCode, uid) {
         .insert({
             id: roomCode,
             status: 'waiting',
-            player1_id: roomCode + uid + '_p1',
+            player1_id: roomCode + '_' + uid + '_p1',
             pitch_set_p1: getGamePitches(),
             pitch_set_p2: getGamePitches(),
         })
@@ -26,7 +26,7 @@ export async function joinRoom(roomCode, uid) {
     const { data, error } = await supabase
         .from('rooms')
         .update({
-            player2_id: roomCode + uid + '_p2',
+            player2_id: roomCode + '_' + uid + '_p2',
             status: 'active'
         })
         .eq('id', roomCode)
@@ -95,7 +95,7 @@ export async function updateCoinTossRes(roomCode, coinRes) {
 
 export async function checkRoomStatus(roomCode) {
     const { data, error } = await supabase
-        .from('rooms')
+    .from('rooms')
         .select()
         .eq('id', roomCode)
         .single();
@@ -123,7 +123,7 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
 
 export async function throwPitch(roomCode, pitchData) {
     const { data, error } = await supabase
-        .from('pitches')
+    .from('pitches')
         .insert([{
             room_id: roomCode,
             aim_x: pitchData.aim_x,
@@ -182,16 +182,44 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         ...applyRunnerEngine(state, result, isHost)
     };
 
-    const inning = applyInningEngine(state);
+    const extraInningRunScored =
+        state.inning > 9 &&
+        (
+            state.score_home !== current.score_home ||
+            state.score_away !== current.score_away
+        );
+
+        const completedFrame = current.inning_frame;
+        const inningComplete = state.outs >= 3;
+
+        const runScored =
+            state.score_home !== current.score_home ||
+            state.score_away !== current.score_away;
+
+        const walkOffRun =
+            current.inning === 9 &&
+            current.inning_frame === 'bottom' &&
+            runScored &&
+            state.score_home !== state.score_away;
+
+        const gameIsOver =
+            extraInningRunScored ||
+            walkOffRun ||
+            (inningComplete && shouldEndGame(state, completedFrame));
+        
+    const inning = gameIsOver
+    ? { state, swapped: false }
+        : applyInningEngine(state);
     state = inning.state;
 
     if (inning.swapped) {
         await swapRoles(roomCode, state.current_role_p1);
     }
-
+    
     const { data, error } = await supabase
-        .from('rooms')
+    .from('rooms')
         .update({
+            status: gameIsOver ? 'gameover' : current.status,
             strikes: state.strikes,
             balls: state.balls,
             outs: state.outs,
@@ -206,6 +234,8 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         .eq('id', roomCode)
         .select()
         .single();
+        
+        if (error) console.error("updateGameState error:", error);
 
     if (error) return null;
 

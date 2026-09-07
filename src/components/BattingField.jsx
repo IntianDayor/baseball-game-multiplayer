@@ -22,9 +22,7 @@ import {
 import ballSprite from "../assets/sprite/Ball_Sprite-Sheet_PLACEHOLDER5.png";
 import { clamp, lerp } from "../lib/math";
 
-/* MATH FUNCTIONS */
 
-// For Ball Sprite
 const MIN_REACTION_MS = 1000;
 const MAX_REACTION_MS = 2000;
 const MIN_PITCH_SPEED = 2;
@@ -32,7 +30,7 @@ const MAX_PITCH_SPEED = 10;
 const HITTABLE_GLOW_MS = 150;
 const MIN_HINT_MS = 400;
 const MAX_HINT_MS = 500;
-const LATE_SWING_BUFFER_MS = 100; // Cushion
+const LATE_SWING_BUFFER_MS = 100;
 
 const calcReactionTime = (effectiveSpeed) => {
     const speedT = clamp(
@@ -44,8 +42,6 @@ const calcReactionTime = (effectiveSpeed) => {
 }
 
 function BattingField({ pitches, bats, selected, roomCode, isHost }) {
-    /* VARIABLES */
-    // Batting logic Variables
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
@@ -57,11 +53,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [timingQuality, setTimingQuality] = useState(null);
     const [hintShrinking, setHintShrinking] = useState(false);
 
-    // Contact Point Visualizer Variables // 
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
 
-    // Timer References
     const readDelayRef = useRef(null);
     const autoTakeTimerRef = useRef(null);
     const hintDurationRef = useRef(null);
@@ -72,8 +66,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const incomingPitchRef = useRef(null);
     const hintShrinkingRef = useRef(null);
     const resolutionInProgressRef = useRef(false);
+    const fieldRef = useRef(null);
 
-    // Animation Variable
     const [ballPos, setBallPos] = useState({ x: 0, y: 0 });
     const [frameIndex, setFrameIndex] = useState(0);
     const glowBrightness = 1;
@@ -81,8 +75,20 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [spinRow, setSpinRow] = useState(0);
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
     const [hintDuration, setHintDuration] = useState(0);
+    const [fieldWidth, setFieldWidth] = useState(0);
 
-    // Intentional Walk Listener
+    useEffect(() => {
+        const updateFieldWidth = () => setFieldWidth(fieldRef.current?.clientWidth ?? 0);
+        updateFieldWidth();
+        window.addEventListener("resize", updateFieldWidth);
+
+        return () => window.removeEventListener("resize", updateFieldWidth);
+    }, []);
+
+    const mirrorX = (x) => {
+        return fieldWidth - x;
+    };
+
     useEffect(() => {
         if (!roomCode) return;
 
@@ -113,7 +119,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         return () => supabase.removeChannel(channel);
     }, [roomCode, isHost]);
 
-    // Pitch Listener / Hint Visualizer
     useEffect(() => {
         if (!roomCode) return;
 
@@ -151,7 +156,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 hintShrinkingRef.current = setTimeout(() => setHintShrinking(true), 20);
 
-                // Shows hint first then after short delay canSwing is true
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
                 const duration = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
                 hintDurationRef.current = duration;
@@ -168,7 +172,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     setStrikeZoneVisible(false);
                     isBallFlyingRef.current = true;
 
-                    // ANIMATION
                     const animate = () => {
                         if (!isBallFlyingRef.current) return;
 
@@ -183,7 +186,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             1
                         );
 
-                        // Ball movement //
 
                         let breakProgress = clamp(
                             (t - pitchData.breakTiming) /
@@ -196,8 +198,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             breakProgress * breakProgress;
 
                         const x = lerp(
-                            incomingPitchRef.current.aim_x,
-                            incomingPitchRef.current.final_x,
+                            mirrorX(incomingPitchRef.current.aim_x),
+                            mirrorX(incomingPitchRef.current.final_x),
                             breakProgress
                         );
 
@@ -209,7 +211,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         setBallPos({ x, y });
 
-                        // Ball spin //
 
                         const frame = getFrames(
                             t,
@@ -220,7 +221,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         setFrameIndex(frame);
 
-                        // Continue animation //
 
                         if (
                             elapsed <
@@ -245,7 +245,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         };
     }, [roomCode, pitches]);
 
-    // Game State Listener / Auto-take Timer
     useEffect(() => {
         if (!canSwing || !incomingPitch || !hint) return;
 
@@ -264,7 +263,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 setCanSwing(false)
                 setPitchTaken(true); // Timer Expired
                 setLastPitchLocation({
-                    x: incomingPitch.final_x,
+                    x: mirrorX(incomingPitch.final_x),
                     y: incomingPitch.final_y
                 });
                 setHint(null);
@@ -294,12 +293,13 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
     }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
 
-    // Pitch Set fetching guard
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
     return (
         <>
-            <div className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
+            <div 
+                ref={fieldRef}
+                className="relative w-64 h-64 bg-green-900 rounded cursor-crosshair"
                 onMouseMove={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setCursorPos({
@@ -308,7 +308,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     });
                 }}
 
-                // Batting Logic //
                 onClick={async () => {
 
                     if (!canSwing || !incomingPitch || !pitchStartTime) return;
@@ -328,12 +327,14 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                         clearTimeout(autoTakeTimerRef.current);
 
+                        const finalX = mirrorX(incomingPitch.final_x);
+                        const finalY = incomingPitch.final_y;
                         const distance = Math.sqrt(
-                            Math.pow(cursorPos.x - incomingPitch.final_x, 2) +
-                            Math.pow(cursorPos.y - incomingPitch.final_y, 2)
+                            Math.pow(cursorPos.x - finalX, 2) +
+                            Math.pow(cursorPos.y - finalY, 2)
                         );
 
-                        const verticalOffset = cursorPos.y - incomingPitch.final_y;
+                        const verticalOffset = cursorPos.y - finalY;
 
                         const isHit = distance <= hitZone;
 
@@ -354,7 +355,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             )
                             : null;
 
-                        // Roll fielder if it's a hit and not a foul
                         let finalResult = isHit ? hitType : 'swing_miss'
                         if (
                             isHit &&
@@ -366,10 +366,9 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                             finalResult = fielderRoll.result;
                         }
 
-                        // After Swing
                         setSwingResult(finalResult);
                         setLastPitchLocation({
-                            x: incomingPitch.final_x,
+                            x: mirrorX(incomingPitch.final_x),
                             y: incomingPitch.final_y
                         });
                         setHint(null);
@@ -380,7 +379,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
                         await swingAt(incomingPitch.id, roomCode, {
-                            swing_x: cursorPos.x,
+                            swing_x: mirrorX(cursorPos.x),
                             swing_y: cursorPos.y,
                             swing_type: selected,
                             result: finalResult
@@ -392,7 +391,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 }}
             >
 
-                {/* Contact point - Testing */}
                 <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                     style={{
                         width: `${hitZone * 2}px`,
@@ -402,7 +400,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     }}
                 />
 
-                {/* Hint Area */}
                 {hint && incomingPitch && (
                     <div
                         className={"absolute rounded-full border-2 pointer-events-none border-white"}
@@ -412,7 +409,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                                 return {
                                     width: `${size}px`,
                                     height: `${size}px`,
-                                    left: hint.hint_x - size / 2,
+                                    left: mirrorX(hint.hint_x) - size / 2,
                                     top: hint.hint_y - size / 2,
                                 };
                             })(),
@@ -428,7 +425,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     />
                 )}
 
-                {/* Ball Sprite */}
                 {isBallFlying && (
                     <div
                         className="absolute pointer-events-none"
@@ -465,10 +461,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     />
                 )}
 
-                {/* Last Pitch location */}
                 <LastPitchVisual location={lastPitchLocation} />
 
-                {/* Temp Bat Visual */}
                 {swingResult && (
                     <div className={`absolute top-2 left-2 text-sm font-bold ${['single', 'double', 'homerun'].includes(swingResult) ? 'text-green-400' : 'text-red-400'
                         }`}>
@@ -479,6 +473,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         {swingResult === 'swing_miss' && 'MISS!'}
                         {swingResult === 'foul' && 'FOUL!'}
                         {swingResult === 'sac_bunt' && 'SACRIFICIAL BUNT!'}
+                        <div 
+                            className="text-white text-xs"
+                        >
+                            {timingQuality}
+                        </div>
                     </div>
                 )}
                 {pitchTaken && (
@@ -487,7 +486,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     </div>
                 )}
 
-                {/* Strike Zone */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     < StrikeZone 
                         pitches={pitches} 
@@ -497,8 +495,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 </div>
 
             </div>
-            {/* Temp Bat timing teller */}
-            <div className="text-white text-xs text-center">{timingQuality}</div>
         </>
     );
 }

@@ -58,3 +58,19 @@ export function formatInning(inning, inningFrame) {
     : `${inningFrame.toUpperCase()} OF THE ${inning}${suffix.toUpperCase()}`;
 
 }
+
+export function shouldEndGame(state, completedFrame) {
+    const { inning, score_home, score_away } = state;
+
+    if (inning < 9) return false;
+
+    if (completedFrame === 'top') {
+        return inning === 9 && score_home > score_away;
+    }
+
+    if (completedFrame === 'bottom') {
+        return score_home !== score_away;
+    }
+
+    return false;
+}

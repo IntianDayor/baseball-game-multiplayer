@@ -102,14 +102,6 @@ A real-time, turn-based baseball game for two players. Challenge a friend online
 - Move closer to your router
 - Check your internet connection speed
 
-## 📝 Development
-
-For developers looking to modify or extend the game:
-
-- **Build**: `npm run build` - Create an optimized production build
-- **Preview**: `npm run preview` - Test the production build locally
-- **Lint**: `npm run lint` - Run code quality checks
-
 ## 📄 License
 
 This project is provided as-is. All rights reserved.
@@ -117,7 +109,6 @@ This project is provided as-is. All rights reserved.
 ## 🤝 Support
 
 Having issues? Please check the Troubleshooting section above or contact support.
-
 ---
 
 **Enjoy the game!** ⚾
@@ -160,6 +151,3 @@ Batting:
 - Mouse move: aim swing location.
 - Click: swing when the pitch is hittable.
 
-## Development Notes
-
-The game currently uses browser-side Supabase calls only. Any production deployment should harden the database with RLS policies, validate allowed state transitions, and consider a server-authoritative game loop for anti-cheat protection.
