@@ -140,6 +140,8 @@ function Game({
                 const room = payload.new
 
                 if (room.status === 'gameover') {
+                    setScoreHome(room.score_home);
+                    setScoreAway(room.score_away);
                     setScreen('gameover');
                     return;
                 }
