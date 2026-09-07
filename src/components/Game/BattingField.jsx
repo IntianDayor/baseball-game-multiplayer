@@ -91,7 +91,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
         return () => resizeObserver.disconnect();
     }, []);
 
-    // Intentional Walk Listener
     useEffect(() => {
         if (!roomCode) return;
 
