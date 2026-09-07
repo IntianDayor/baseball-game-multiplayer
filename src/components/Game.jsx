@@ -6,7 +6,6 @@ import BattingSelector from "./BattingSelector";
 import ScoreBoard from "./ScoreBoard";
 import MiniMap from "./MiniMap";
 import UtilityButtons from "./UtilityButtons";
-import DevSettings from "./DevSettings";
 import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
