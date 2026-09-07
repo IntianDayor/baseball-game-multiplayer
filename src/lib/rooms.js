@@ -57,7 +57,6 @@ export async function startGame(roomCode) {
     return data;
 }
 
-
 // =============== COIN TOSS MECHANIC =============== //
 
 // CHOSEN COIN
@@ -200,13 +199,6 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     };
 
     // Inning / Inning Frame Manager
-    const extraInningRunScored = 
-        state.inning > 9 &&
-        (
-            state.score_home !== current.score_home ||
-            state.score_away !== current.score_away
-        ); 
-        
         const completedFrame = current.inning_frame;
         const inningComplete = state.outs >= 3;
 
@@ -214,16 +206,13 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
             state.score_home !== current.score_home ||
             state.score_away !== current.score_away;
 
-        const walkOffRun =
-            current.inning === 9 &&
+        const isWalkOff = 
+            current.inning >= 9 &&
             current.inning_frame === 'bottom' &&
             runScored &&
-            state.score_home !== state.score_away;
+            state.score_home > state.score_away;
 
-        const gameIsOver =
-            extraInningRunScored ||
-            walkOffRun ||
-            (inningComplete && shouldEndGame(state, completedFrame));
+        const gameIsOver = isWalkOff || (inningComplete && shouldEndGame(state, completedFrame))
         
     const inning = gameIsOver
     ? { state, swapped: false }
@@ -284,8 +273,6 @@ export async function swapRoles(roomCode, currentRoleP1) {
 
 // =============== DEVELOPER TOOLS =============== //
 
-// These helpers are intentionally separate from the play-resolution engines. They
-// are for setting up repeatable test scenarios without affecting normal gameplay.
 export async function updateDevGameState(roomCode, changes) {
     const { data, error } = await supabase
     .from('rooms')
