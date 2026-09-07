@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import { getGamePitches } from '../data/pitches';
 import { applyCountEngine } from '../utils/engines/counts';
-import { applyInningEngine } from '../utils/engines/innings';
+import { applyInningEngine, shouldEndGame } from '../utils/engines/innings';
 import { applyRunnerEngine } from '../utils/engines/runners';
 import { applyWalkEngine } from '../utils/engines/walks';
 
@@ -57,20 +57,6 @@ export async function startGame(roomCode) {
     return data;
 }
 
-// Game Over
-export async function gameOver(roomCode) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            status: 'gameover'
-        })
-        .select()
-        .eq('id', roomCode)
-        .single()
-
-    if (error) console.error('gameOver error:', error);
-    return data;
-}
 
 // =============== COIN TOSS MECHANIC =============== //
 
@@ -109,7 +95,7 @@ export async function updateCoinTossRes(roomCode, coinRes) {
 // CHECK ROOM STATUS
 export async function checkRoomStatus(roomCode) {
     const { data, error } = await supabase
-        .from('rooms')
+    .from('rooms')
         .select()
         .eq('id', roomCode)
         .single()
@@ -133,7 +119,7 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
         .select()
         .eq('id', roomCode)
         .single()
-
+        
     if (error) console.error('updatePlayerRole error:', error);
     return data;
 }
@@ -141,7 +127,7 @@ export async function updatePlayerRole(roomCode, chosenRole, isHost) {
 // PITCH THROWING
 export async function throwPitch(roomCode, pitchData) {
     const { data, error } = await supabase
-        .from('pitches')
+    .from('pitches')
         .insert([{
             room_id: roomCode,
             aim_x: pitchData.aim_x,
@@ -160,7 +146,7 @@ export async function throwPitch(roomCode, pitchData) {
         .select()
         .single()
 
-    if (error) console.error('throwPitch error:', error);
+        if (error) console.error('throwPitch error:', error);
     return data;
 }
 
@@ -192,7 +178,7 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     const current = await checkRoomStatus(roomCode);
 
     // If game is frozen, skip all progression engines
-    if (current.game_frozen) {
+    if (current.game_frozen || current.status === 'gameover') {
         return current;
     }
 
@@ -214,16 +200,34 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     };
 
     // Inning / Inning Frame Manager
-    const inning = applyInningEngine(state);
+    const extraInningRunScored = 
+        state.inning > 9 &&
+        (
+            state.score_home !== current.score_home ||
+            state.score_away !== current.score_away
+        ); 
+        
+        const completedFrame = current.inning_frame;
+        const inningComplete = state.outs >= 3;
+        const gameIsOver =
+        extraInningRunScored ||
+        (inningComplete && shouldEndGame(state, completedFrame));
+        
+    const inning = gameIsOver
+    ? { state, swapped: false }
+        : applyInningEngine(state);
+        
     state = inning.state;
 
     if (inning.swapped) {
         await swapRoles(roomCode, state.current_role_p1);
     }
-
+    
+    // Update Database
     const { data, error } = await supabase
-        .from('rooms')
+    .from('rooms')
         .update({
+            status: gameIsOver ? 'gameover' : current.status,
             strikes: state.strikes,
             balls: state.balls,
             outs: state.outs,
@@ -238,13 +242,13 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
         .eq('id', roomCode)
         .select()
         .single();
+        
+        if (error) console.error("updateGameState error:", error);
 
-    if (error) console.error("updateGameState error:", error);
+        return data;
+    }
 
-    return data;
-}
-
-// ROLE SWITCHING
+    // ROLE SWITCHING
 export async function swapRoles(roomCode, currentRoleP1) {
     const newRoleP1 = currentRoleP1 === 'pitcher' ? 'batter' : 'pitcher';
     const newRoleP2 = currentRoleP1 === 'pitcher' ? 'pitcher' : 'batter';
@@ -272,18 +276,33 @@ export async function swapRoles(roomCode, currentRoleP1) {
 // are for setting up repeatable test scenarios without affecting normal gameplay.
 export async function updateDevGameState(roomCode, changes) {
     const { data, error } = await supabase
-        .from('rooms')
-        .update(changes)
-        .eq('id', roomCode)
-        .select()
+    .from('rooms')
+    .update(changes)
+    .eq('id', roomCode)
+    .select()
         .single();
 
-    if (error) console.error('updateDevGameState error:', error);
+        if (error) console.error('updateDevGameState error:', error);
     return data;
 }
 
 export async function updateDevPitchSet(roomCode, isHost, pitches) {
     const pitchColumn = isHost ? 'pitch_set_p1' : 'pitch_set_p2';
-
+    
     return updateDevGameState(roomCode, { [pitchColumn]: pitches });
+}
+
+// Developer-only game over control
+export async function forceGameOver(roomCode) {
+    const { data, error } = await supabase
+        .from('rooms')
+        .update({
+            status: 'gameover'
+        })
+        .select()
+        .eq('id', roomCode)
+        .single()
+
+    if (error) console.error('forceGameOver error:', error);
+    return data;
 }

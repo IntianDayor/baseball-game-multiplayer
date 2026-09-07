@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { PITCH_LIBRARY } from "../data/pitches";
-import { gameOver, updateDevGameState, updateDevPitchSet } from "../lib/rooms";
+import { forceGameOver, updateDevGameState, updateDevPitchSet } from "../lib/rooms";
 
 const SPIN_TYPES = ['BACKSPIN', 'TOPSPIN', 'SIDESPIN', 'COMBINED', 'UNSTABLE'];
 
@@ -57,7 +57,7 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
     };
 
     const finishGame = async () => {
-        await gameOver(roomCode);
+        await forceGameOver(roomCode);
         setScreen('gameover');
     };
 
