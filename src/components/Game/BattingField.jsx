@@ -77,7 +77,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [fieldWidth, setFieldWidth] = useState(0);
 
     const mirrorX = (x) => {
-        return fieldWidth - x;
+        const width = fieldWidth || fieldRef.current?.clientWidth || 0;
+        return width - x;
     };
 
     useEffect(() => {
