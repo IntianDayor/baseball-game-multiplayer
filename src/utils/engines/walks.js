@@ -1,5 +1,12 @@
 export function applyWalkEngine(state, result) {
-    let { balls, runner_first, runner_second, runner_third, score_home, score_away } = state;
+    let { 
+        balls, 
+        runner_first, 
+        runner_second, 
+        runner_third, 
+        score_home, 
+        score_away, 
+    } = state;
 
     if (balls < 4) return { state, result };
 
