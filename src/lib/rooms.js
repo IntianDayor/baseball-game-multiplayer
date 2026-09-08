@@ -1,172 +1,173 @@
-import { supabase } from './supabase'
-import { getGamePitches } from '../data/pitches';
-import { applyCountEngine } from '../utils/engines/counts';
-import { applyInningEngine, shouldEndGame } from '../utils/engines/innings';
-import { applyRunnerEngine } from '../utils/engines/runners';
-import { applyWalkEngine } from '../utils/engines/walks';
+import { supabase } from "./supabase";
+import { getGamePitches } from "../data/pitches";
+import { applyCountEngine } from "../utils/engines/counts";
+import { applyInningEngine, shouldEndGame } from "../utils/engines/innings";
+import { applyRunnerEngine } from "../utils/engines/runners";
+import { applyWalkEngine } from "../utils/engines/walks";
 
 // =============== LOBBY =============== //
 
 // ROOM CREATE
 export async function createRoom(roomCode, uid) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .insert({
-            id: roomCode,
-            status: 'waiting',
-            player1_id: roomCode + '_' + uid + '_p1',
-            pitch_set_p1: getGamePitches(),
-            pitch_set_p2: getGamePitches(),
-        })
-        .select()
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .insert({
+      id: roomCode,
+      status: "waiting",
+      player1_id: roomCode + "_" + uid + "_p1",
+      pitch_set_p1: getGamePitches(),
+      pitch_set_p2: getGamePitches(),
+    })
+    .select()
+    .single();
 
-    if (error) console.error('createRoom error:', error);
-    return data;
-
+  if (error) console.error("createRoom error:", error);
+  return data;
 }
 
 // ROOM JOIN
 export async function joinRoom(roomCode, uid) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            player2_id: roomCode + '_' + uid + '_p2',
-            status: 'active'
-        })
-        .eq('id', roomCode)
-        .select()
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      player2_id: roomCode + "_" + uid + "_p2",
+      status: "active",
+    })
+    .eq("id", roomCode)
+    .select()
+    .single();
 
-    if (error) console.error('joinRoom error:', error);
-    return data;
+  if (error) console.error("joinRoom error:", error);
+  return data;
 }
 
 // START GAME
 export async function startGame(roomCode) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            status: 'playing'
-        })
-        .select()
-        .eq('id', roomCode)
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      status: "playing",
+    })
+    .select()
+    .eq("id", roomCode)
+    .single();
 
-    if (error) console.error('startGame error:', error);
-    return data;
+  if (error) console.error("startGame error:", error);
+  return data;
 }
 
 // =============== COIN TOSS MECHANIC =============== //
 
 // CHOSEN COIN
 export async function coinChoice(roomCode, chosenCoin) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            coin_choice: chosenCoin
-        })
-        .select()
-        .eq('id', roomCode)
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      coin_choice: chosenCoin,
+    })
+    .select()
+    .eq("id", roomCode)
+    .single();
 
-    if (error) console.error('coinChoice error:', error);
-    return data;
+  if (error) console.error("coinChoice error:", error);
+  return data;
 }
 
 // COIN TOSS RESULT
 export async function updateCoinTossRes(roomCode, coinRes) {
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            coin_result: coinRes
-        })
-        .select()
-        .eq('id', roomCode)
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      coin_result: coinRes,
+    })
+    .select()
+    .eq("id", roomCode)
+    .single();
 
-    if (error) console.error('coinTossRes error:', error);
-    return data;
+  if (error) console.error("coinTossRes error:", error);
+  return data;
 }
 
 // =============== ROOM STATS =============== //
 
 // CHECK ROOM STATUS
 export async function checkRoomStatus(roomCode) {
-    const { data, error } = await supabase
-    .from('rooms')
-        .select()
-        .eq('id', roomCode)
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .select()
+    .eq("id", roomCode)
+    .single();
 
-    if (error) console.error('checkRoomStatus error:', error);
-    return data;
+  if (error) console.error("checkRoomStatus error:", error);
+  return data;
 }
 
 // =============== PLAY ORDER - PITCHING OR BATTING =============== //
 
 // UPDATE ROLE
 export async function updatePlayerRole(roomCode, chosenRole, isHost) {
-    const opposite = chosenRole === 'pitcher' ? 'batter' : 'pitcher'; // Opposite of winner chosen role
+  const opposite = chosenRole === "pitcher" ? "batter" : "pitcher"; // Opposite of winner chosen role
 
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            current_role_p1: isHost ? chosenRole : opposite,
-            current_role_p2: isHost ? opposite : chosenRole
-        })
-        .select()
-        .eq('id', roomCode)
-        .single()
-        
-    if (error) console.error('updatePlayerRole error:', error);
-    return data;
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      current_role_p1: isHost ? chosenRole : opposite,
+      current_role_p2: isHost ? opposite : chosenRole,
+    })
+    .select()
+    .eq("id", roomCode)
+    .single();
+
+  if (error) console.error("updatePlayerRole error:", error);
+  return data;
 }
 
 // PITCH THROWING
 export async function throwPitch(roomCode, pitchData) {
-    const { data, error } = await supabase
-    .from('pitches')
-        .insert([{
-            room_id: roomCode,
-            aim_x: pitchData.aim_x,
-            aim_y: pitchData.aim_y,
-            final_x: pitchData.final_x,
-            final_y: pitchData.final_y,
-            hint_x: pitchData.hint_x,
-            hint_y: pitchData.hint_y,
-            break_scale: pitchData.break_scale,
-            movement_scale: pitchData.movement_scale,
-            power: pitchData.power,
-            pitch_type: pitchData.pitch_type,
-            is_strike: pitchData.is_strike,
-            thrown_at: pitchData.thrown_at
-        }])
-        .select()
-        .single()
+  const { data, error } = await supabase
+    .from("pitches")
+    .insert([
+      {
+        room_id: roomCode,
+        aim_x: pitchData.aim_x,
+        aim_y: pitchData.aim_y,
+        final_x: pitchData.final_x,
+        final_y: pitchData.final_y,
+        hint_x: pitchData.hint_x,
+        hint_y: pitchData.hint_y,
+        break_scale: pitchData.break_scale,
+        movement_scale: pitchData.movement_scale,
+        power: pitchData.power,
+        pitch_type: pitchData.pitch_type,
+        is_strike: pitchData.is_strike,
+        thrown_at: pitchData.thrown_at,
+      },
+    ])
+    .select()
+    .single();
 
-        if (error) console.error('throwPitch error:', error);
-    return data;
+  if (error) console.error("throwPitch error:", error);
+  return data;
 }
 
 // SWING DETECTION
 export async function swingAt(pitchId, roomCode, swingData) {
-    const { data, error } = await supabase
-        .from('swings')
-        .insert({
-            pitch_id: pitchId,
-            room_id: roomCode,
-            swing_x: swingData.swing_x,
-            swing_y: swingData.swing_y,
-            swing_type: swingData.swing_type,
-            swing_at: new Date().toISOString(),
-            result: swingData.result
-        })
-        .select()
-        .single()
+  const { data, error } = await supabase
+    .from("swings")
+    .insert({
+      pitch_id: pitchId,
+      room_id: roomCode,
+      swing_x: swingData.swing_x,
+      swing_y: swingData.swing_y,
+      swing_type: swingData.swing_type,
+      swing_at: new Date().toISOString(),
+      result: swingData.result,
+    })
+    .select()
+    .single();
 
-    if (error) console.error('swingAt error:', error);
-    return data
+  if (error) console.error("swingAt error:", error);
+  return data;
 }
 
 // =============== GAME STATE MANAGER =============== //
@@ -176,92 +177,93 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
     // Fetch First Current State:
     const current = await checkRoomStatus(roomCode);
 
-    // Count Manager
-    let state = {
-        ...current,
-        ...applyCountEngine(current, result)
-    };
+  // Count Manager
+  let state = {
+    ...current,
+    ...applyCountEngine(current, result),
+  };
 
-    // Walk Mechanic Manager
-    const walk = applyWalkEngine(state, result);
-    state = walk.state;
-    result = walk.result;
+  // Walk Mechanic Manager
+  const walk = applyWalkEngine(state, result);
+  state = walk.state;
+  result = walk.result;
 
-    // Runner Advancement Manager
-    state = {
-        ...state,
-        ...applyRunnerEngine(state, result, isHost)
-    };
+  // Runner Advancement Manager
+  state = {
+    ...state,
+    ...applyRunnerEngine(state, result, isHost),
+  };
 
-    // Inning / Inning Frame Manager
-        const completedFrame = current.inning_frame;
-        const inningComplete = state.outs >= 3;
+  // Inning / Inning Frame Manager
+  const completedFrame = current.inning_frame;
+  const inningComplete = state.outs >= 3;
 
-        const runScored =
-            state.score_home !== current.score_home ||
-            state.score_away !== current.score_away;
+  const runScored =
+    state.score_home !== current.score_home ||
+    state.score_away !== current.score_away;
 
-        const isWalkOff = 
-            current.inning >= 9 &&
-            current.inning_frame === 'bottom' &&
-            runScored &&
-            state.score_home > state.score_away;
+  const isWalkOff =
+    current.inning >= 9 &&
+    current.inning_frame === "bottom" &&
+    runScored &&
+    state.score_home > state.score_away;
 
-        const gameIsOver = isWalkOff || (inningComplete && shouldEndGame(state, completedFrame))
-        
-    const inning = gameIsOver
+  const gameIsOver =
+    isWalkOff || (inningComplete && shouldEndGame(state, completedFrame));
+
+  const inning = gameIsOver
     ? { state, swapped: false }
-        : applyInningEngine(state);
-        
-    state = inning.state;
+    : applyInningEngine(state);
 
-    if (inning.swapped) {
-        await swapRoles(roomCode, state.current_role_p1);
-    }
-    
-    // Update Database
-    const { data, error } = await supabase
-    .from('rooms')
-        .update({
-            status: gameIsOver ? 'gameover' : current.status,
-            strikes: state.strikes,
-            balls: state.balls,
-            outs: state.outs,
-            inning: state.inning,
-            inning_frame: state.inning_frame,
-            runner_first: state.runner_first,
-            runner_second: state.runner_second,
-            runner_third: state.runner_third,
-            score_home: state.score_home,
-            score_away: state.score_away
-        })
-        .eq('id', roomCode)
-        .select()
-        .single();
-        
-        if (error) console.error("updateGameState error:", error);
+  state = inning.state;
 
-        return data;
-    }
+  if (inning.swapped) {
+    await swapRoles(roomCode, state.current_role_p1);
+  }
 
-    // ROLE SWITCHING
+  // Update Database
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      status: gameIsOver ? "gameover" : current.status,
+      strikes: state.strikes,
+      balls: state.balls,
+      outs: state.outs,
+      inning: state.inning,
+      inning_frame: state.inning_frame,
+      runner_first: state.runner_first,
+      runner_second: state.runner_second,
+      runner_third: state.runner_third,
+      score_home: state.score_home,
+      score_away: state.score_away,
+    })
+    .eq("id", roomCode)
+    .select()
+    .single();
+
+  if (error) console.error("updateGameState error:", error);
+
+  return data;
+}
+
+// ROLE SWITCHING
 export async function swapRoles(roomCode, currentRoleP1) {
-    const newRoleP1 = currentRoleP1 === 'pitcher' ? 'batter' : 'pitcher';
-    const newRoleP2 = currentRoleP1 === 'pitcher' ? 'pitcher' : 'batter';
+  const newRoleP1 = currentRoleP1 === "pitcher" ? "batter" : "pitcher";
+  const newRoleP2 = currentRoleP1 === "pitcher" ? "pitcher" : "batter";
 
-    const { data, error } = await supabase
-        .from('rooms')
-        .update({
-            current_role_p1: newRoleP1,
-            current_role_p2: newRoleP2,
-            runner_first: false,
-            runner_second: false,
-            runner_third: false
-        })
-        .eq('id', roomCode)
-        .select()
-        .single()
+  const { data, error } = await supabase
+    .from("rooms")
+    .update({
+      current_role_p1: newRoleP1,
+      current_role_p2: newRoleP2,
+      runner_first: false,
+      runner_second: false,
+      runner_third: false,
+    })
+    .eq("id", roomCode)
+    .select()
+    .single();
 
-    if (error) console.error('swapRoles error:', error);
-    return data;
+  if (error) console.error("swapRoles error:", error);
+  return data;
 }
