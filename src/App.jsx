@@ -3,9 +3,10 @@ import Lobby from "./components/Game/Lobby";
 import Game from "./components/Game";
 import Loading from "./components/Game/Loading";
 import GameOver from "./components/Game/GameOver";
+import CaptchaGate from "./components/Auth/CaptchaGate";
 import { getGameBats } from "./data/bats";
 import { useEffect, useState } from "react";
-import { ensureSession } from "./lib/supabase";
+import { getExistingSession, signInAnonymous } from "./lib/supabase";
 
 function App() {
     const [screen, setScreen] = useState('menu');
@@ -14,7 +15,8 @@ function App() {
     const [isHost, setIsHost] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [uid, setUid] = useState(null);
-
+    const [needsCaptcha, setNeedsCaptcha] = useState(false);
+    
     const [myPitches, setMyPitches] = useState(null);
     const [bats] = useState(() => getGameBats());
     const [opponentPitches, setOpponentPitches] = useState(null);
@@ -23,16 +25,30 @@ function App() {
 
     useEffect(() => {
         async function init() {
-            const id = await ensureSession();
-            setUid(id);
+            const existingUid = await getExistingSession();
+            if (existingUid) {
+                setUid(existingUid);
+            } else {
+                setNeedsCaptcha(true);
+            }
         }
 
         init();
     }, []);
 
-    const renderScreen = () => {
-        if (!uid) return <Loading />;
+    async function handleCaptchaVerified(token) {
+        const id = await signInAnonymous(token);
+        setUid(id);
+        setNeedsCaptcha(false);
+    }
 
+    const renderScreen = () => {
+        if (!uid) {
+            return needsCaptcha
+                ? <CaptchaGate onVerified={handleCaptchaVerified} />
+                : <Loading />;
+        }
+        
         switch (screen) {
             case 'menu':
                 return <MainMenu setScreen={setScreen} />;
