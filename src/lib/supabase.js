@@ -5,13 +5,22 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_KEY;
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function ensureSession() {
-    const { data: {session} } = await supabase.auth.getSession();
-    if (session) return session.user.id;
+// Returns the uid of an existing session (page reload, returning player),
+// or null if there is none yet. No captcha needed for this path — captcha
+// only guards the actual sign-in below.
+export async function getExistingSession() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session ? session.user.id : null;
+}
 
-    const { data, error } = await supabase.auth.signInAnonymously();
+// Signs in anonymously using a captcha token from the CaptchaGate widget.
+export async function signInAnonymous(captchaToken) {
+    const { data, error } = await supabase.auth.signInAnonymously({
+        options: { captchaToken }
+    });
+
     if (error) {
-        console.error('ensureSession error', error);
+        console.error('signInAnonymous error', error);
         return null;
     }
 
