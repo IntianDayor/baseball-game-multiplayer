@@ -434,7 +434,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                                 return {
                                     width: `${size}px`,
                                     height: `${size}px`,
-                                    left: mirrorX(hint.hint_x) - size / 2,
+                                    left: fieldWidth - hint.hint_x - size / 2,
                                     top: hint.hint_y - size / 2,
                                 };
                             })(),
