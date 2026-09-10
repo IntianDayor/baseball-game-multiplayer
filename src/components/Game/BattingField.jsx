@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import StrikeZone from "../UI/general/StrikeZone";
 import LastPitchVisual from "../UI/general/LastPitchVisual";
 import { supabase } from "../../lib/supabase";
@@ -76,10 +76,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [hintDuration, setHintDuration] = useState(0);
     const [fieldWidth, setFieldWidth] = useState(0);
 
-    const mirrorX = (x) => {
-        const width = fieldWidth || fieldRef.current?.clientWidth || 0;
+    // Mirror X coordinates from Pitching side
+    const mirrorX = useCallback((x) => {
+        const width = fieldRef.current?.clientWidth ?? 0;
         return width - x;
-    };
+    }, []);
 
     useEffect(() => {
         const updateFieldWidth = () => setFieldWidth(fieldRef.current?.clientWidth ?? 0);
@@ -245,7 +246,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             if (hintShrinkingRef.current) clearTimeout(hintShrinkingRef.current);
             supabase.removeChannel(channel);
         };
-    }, [roomCode, pitches]);
+    }, [roomCode, pitches, mirrorX]);
 
     useEffect(() => {
         if (!canSwing || !incomingPitch || !hint) return;
@@ -293,7 +294,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         return () => clearTimeout(autoTakeTimerRef.current);
 
-    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
+    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint, mirrorX]);
 
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
 
@@ -411,7 +412,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                                 return {
                                     width: `${size}px`,
                                     height: `${size}px`,
-                                    left: mirrorX(hint.hint_x) - size / 2,
+                                    left: fieldWidth - hint.hint_x - size / 2,
                                     top: hint.hint_y - size / 2,
                                 };
                             })(),
