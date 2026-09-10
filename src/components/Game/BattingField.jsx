@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import StrikeZone from "../UI/general/StrikeZone";
 import LastPitchVisual from "../UI/general/LastPitchVisual";
 import { supabase } from "../../lib/supabase";
@@ -85,10 +85,10 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [fieldWidth, setFieldWidth] = useState(0);
 
     // Mirror X coordinates from Pitching side
-    const mirrorX = (x) => {
-        const width = fieldWidth || fieldRef.current?.clientWidth || 0;
+    const mirrorX = useCallback((x) => {
+        const width = fieldRef.current?.clientWidth ?? 0;
         return width - x;
-    };
+    }, []);
 
     useEffect(() => {
         const updateFieldWidth = () => setFieldWidth(fieldRef.current?.clientWidth ?? 0);
@@ -261,7 +261,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             if (hintShrinkingRef.current) clearTimeout(hintShrinkingRef.current);
             supabase.removeChannel(channel);
         };
-    }, [roomCode, pitches]);
+    }, [roomCode, pitches, mirrorX]);
 
     // Game State Listener / Auto-take Timer
     useEffect(() => {
@@ -310,7 +310,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         return () => clearTimeout(autoTakeTimerRef.current);
 
-    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint]);
+    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint, mirrorX]);
 
     // Pitch Set fetching guard
     if (!pitches) return <div>Waiting for opponent pitches...</div>;
