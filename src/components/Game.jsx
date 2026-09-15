@@ -7,7 +7,7 @@ import ScoreBoard from "./UI/general/ScoreBoard";
 import MiniMap from "./UI/general/MiniMap";
 import UtilityButtons from "./UI/general/UtilityButtons";
 import DevSettings from "./Dev/DevSettings";
-import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import { coinChoice, updateCoinTossRes, updatePlayerRole, getMyPitchSet } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
 import Loading from "./Game/Loading";
@@ -17,10 +17,9 @@ const UTILITY_HOLD_MS = 2000;
 function Game({
     setScreen,
     bats,
+    uid,
     myPitches,
     setMyPitches,
-    opponentPitches,
-    setOpponentPitches,
     selected,
     setSelected,
     isHost,
@@ -170,18 +169,6 @@ function Game({
                     setRole(myRole);
                 }
 
-                // Pitch Set Assignment
-                const hostPitches = room.pitch_set_p1;
-                const guestPitches = room.pitch_set_p2;
-
-                if (isHost) {
-                    setMyPitches(hostPitches ?? null);
-                    setOpponentPitches(guestPitches ?? null);
-                } else {
-                    setMyPitches(guestPitches ?? null);
-                    setOpponentPitches(hostPitches ?? null);
-                }
-
                 /* Game State Assignment */
 
                 // Data Update
@@ -209,8 +196,6 @@ function Game({
         isHost,
         scoreHome,
         scoreAway,
-        setMyPitches,
-        setOpponentPitches,
         setStrikes,
         setOuts,
         setBalls,
@@ -221,6 +206,13 @@ function Game({
         setRunners,
         setScreen
     ]);
+
+    // Pitch Set Anti-cheat
+    useEffect(() => {
+        if (!roomCode || !uid) return;
+
+        getMyPitchSet(roomCode, uid).then(setMyPitches);
+    }, [roomCode, uid, setMyPitches]);
 
 
     /* COIN TOSS SCREEN BEFORE GAME */
@@ -310,7 +302,7 @@ function Game({
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
 
             <button onClick={() => setIsDevSettingsOpen(true)} className="absolute bottom-4 left-4 z-10 rounded bg-gray-950/85 px-3 py-2 text-xs font-bold text-amber-300 ring-1 ring-amber-400/60 hover:bg-gray-800">DEV SETTINGS</button>
-            {isDevSettingsOpen && <DevSettings roomCode={roomCode} isHost={isHost} pitches={myPitches} gameState={{ inning, inning_frame: inningFrame, strikes, balls, outs, score_home: scoreHome, score_away: scoreAway, runner_first: runners.first, runner_second: runners.second, runner_third: runners.third }} onClose={() => setIsDevSettingsOpen(false)} setScreen={setScreen} />}
+            {isDevSettingsOpen && <DevSettings roomCode={roomCode} uid={uid} pitches={myPitches} gameState={{ inning, inning_frame: inningFrame, strikes, balls, outs, score_home: scoreHome, score_away: scoreAway, runner_first: runners.first, runner_second: runners.second, runner_third: runners.third }} onClose={() => setIsDevSettingsOpen(false)} setScreen={setScreen} />}
 
             {/* Scoreboard */}
             <div className="absolute left-4 top-4">
@@ -375,7 +367,7 @@ function Game({
         <div className="flex flex-col items-center justify-center min-h-screen bg-green-900">
 
             <button onClick={() => setIsDevSettingsOpen(true)} className="absolute bottom-4 left-4 z-10 rounded bg-gray-950/85 px-3 py-2 text-xs font-bold text-amber-300 ring-1 ring-amber-400/60 hover:bg-gray-800">DEV SETTINGS</button>
-            {isDevSettingsOpen && <DevSettings roomCode={roomCode} isHost={isHost} pitches={myPitches} gameState={{ inning, inning_frame: inningFrame, strikes, balls, outs, score_home: scoreHome, score_away: scoreAway, runner_first: runners.first, runner_second: runners.second, runner_third: runners.third }} onClose={() => setIsDevSettingsOpen(false)} setScreen={setScreen} />}
+            {isDevSettingsOpen && <DevSettings roomCode={roomCode} uid={uid} pitches={myPitches} gameState={{ inning, inning_frame: inningFrame, strikes, balls, outs, score_home: scoreHome, score_away: scoreAway, runner_first: runners.first, runner_second: runners.second, runner_third: runners.third }} onClose={() => setIsDevSettingsOpen(false)} setScreen={setScreen} />}
 
             {/* Scoreboard */}
             <div className="absolute left-4 top-4">
@@ -406,7 +398,6 @@ function Game({
                 bats={bats}
                 selected={selected}
                 setSelected={setSelected}
-                pitches={opponentPitches}
                 roomCode={roomCode}
                 strikes={strikes}
                 balls={balls}

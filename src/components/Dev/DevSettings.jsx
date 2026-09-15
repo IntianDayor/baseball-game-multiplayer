@@ -4,7 +4,7 @@ import { forceGameOver, updateDevGameState, updateDevPitchSet } from "../../lib/
 
 const SPIN_TYPES = ['BACKSPIN', 'TOPSPIN', 'SIDESPIN', 'COMBINED', 'UNSTABLE'];
 
-function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen }) {
+function DevSettings({ roomCode, uid, pitches, gameState, onClose, setScreen }) {
     const [loadout, setLoadout] = useState(() => ({
         Q: pitches?.Q?.name ?? PITCH_LIBRARY.fastball.name,
         W: pitches?.W?.name ?? PITCH_LIBRARY.slider.name,
@@ -52,7 +52,7 @@ function DevSettings({ roomCode, isHost, pitches, gameState, onClose, setScreen 
             Object.entries(loadout).map(([key, name]) => [key, { ...byName[name], key }])
         );
         setMessage('Saving pitch loadout...');
-        const result = await updateDevPitchSet(roomCode, isHost, testPitches);
+        const result = await updateDevPitchSet(roomCode, uid, testPitches);
         setMessage(result ? 'Test loadout applied. Your next pitch uses it.' : 'Could not save pitch loadout.');
     };
 

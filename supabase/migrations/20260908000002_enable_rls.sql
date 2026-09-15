@@ -1,17 +1,3 @@
--- Enable RLS on all three gameplay tables and lock them down to room
--- participants (anonymous or otherwise — anonymous sign-ins use the
--- `authenticated` Postgres role, so `to authenticated` policies apply to
--- them the same as any signed-in user).
---
--- Known gap, intentionally not addressed here: pitch_set_p1 / pitch_set_p2
--- on `rooms` are still readable by both participants of a room, which
--- means a player can technically read their opponent's full pitch library
--- (speed/break/etc) since RLS is row-level, not column-level, and Realtime
--- broadcasts the full row to anyone whose SELECT policy passes. Fixing
--- that requires moving pitch data off the `rooms` Realtime broadcast path
--- entirely (e.g. a dedicated per-player fetch) — tracked as a separate
--- follow-up, not bundled into this security pass.
-
 alter table public.rooms enable row level security;
 alter table public.pitches enable row level security;
 alter table public.swings enable row level security;

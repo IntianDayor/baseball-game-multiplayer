@@ -16,13 +16,25 @@ export async function createRoom(roomCode, uid) {
       status: "waiting",
       player1_id: roomCode + "_p1",
       player1_uid: uid,
-      pitch_set_p1: getGamePitches(),
-      pitch_set_p2: getGamePitches(),
     })
     .select()
     .single();
 
-  if (error) console.error("createRoom error:", error);
+  if (error) {
+    console.error("createRoom error:", error);
+    return data;
+  }
+
+  const { error: pitchSetError } = await supabase
+    .from("pitch_sets")
+    .insert({
+      room_id: roomCode,
+      player_uid: uid,
+      pitches: getGamePitches(),
+    });
+
+  if (pitchSetError) console.error("createRoom pitch_sets error:", pitchSetError);
+
   return data;
 }
 
@@ -39,8 +51,39 @@ export async function joinRoom(roomCode, uid) {
     .select()
     .single();
 
-  if (error) console.error("joinRoom error:", error);
+  if (error) {
+    console.error("joinRoom error:", error);
+    return data;
+  }
+
+  const { error: pitchSetError } = await supabase
+    .from("pitch_sets")
+    .insert({
+      room_id: roomCode,
+      player_uid: uid,
+      pitches: getGamePitches(),
+    });
+
+  if (pitchSetError) console.error("joinRoom pitch_sets error:", pitchSetError);
+
   return data;
+}
+
+// Pitch set guard
+export async function getMyPitchSet(roomCode, uid) {
+  const { data, error } = await supabase
+    .from("pitch_sets")
+    .select("pitches")
+    .eq("room_id", roomCode)
+    .eq("player_uid", uid)
+    .single();
+
+  if (error) {
+    console.error("getMyPitchSet error:", error);
+    return null;
+  }
+
+  return data.pitches;
 }
 
 // START GAME
@@ -143,6 +186,11 @@ export async function throwPitch(roomCode, pitchData) {
         pitch_type: pitchData.pitch_type,
         is_strike: pitchData.is_strike,
         thrown_at: pitchData.thrown_at,
+        speed: pitchData.speed,
+        spin_type: pitchData.spin_type,
+        break_timing: pitchData.break_timing,
+        spin_rate: pitchData.spin_rate,
+        spin_direction: pitchData.spin_direction,
       },
     ])
     .select()
@@ -289,10 +337,17 @@ export async function updateDevGameState(roomCode, changes) {
   return data;
 }
 
-export async function updateDevPitchSet(roomCode, isHost, pitches) {
-  const pitchColumn = isHost ? "pitch_set_p1" : "pitch_set_p2";
+export async function updateDevPitchSet(roomCode, uid, pitches) {
+  const { data, error } = await supabase
+    .from("pitch_sets")
+    .update({ pitches })
+    .eq("room_id", roomCode)
+    .eq("player_uid", uid)
+    .select()
+    .single();
 
-  return updateDevGameState(roomCode, { [pitchColumn]: pitches });
+  if (error) console.error("updateDevPitchSet error:", error);
+  return data;
 }
 
 // Developer-only game over control
