@@ -17,7 +17,6 @@ function Game({
     setScreen,
     uid,
     bats,
-    uid,
     myPitches,
     setMyPitches,
     selected,
