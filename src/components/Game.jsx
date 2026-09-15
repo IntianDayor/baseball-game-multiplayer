@@ -15,8 +15,8 @@ const UTILITY_HOLD_MS = 2000;
 
 function Game({
     setScreen,
-    uid,
     bats,
+    uid,
     myPitches,
     setMyPitches,
     selected,
