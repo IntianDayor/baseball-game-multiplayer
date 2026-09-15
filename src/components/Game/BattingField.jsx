@@ -40,7 +40,7 @@ const calcReactionTime = (effectiveSpeed) => {
     return Math.round(lerp(MAX_REACTION_MS, MIN_REACTION_MS, speedT));
 }
 
-function BattingField({ pitches, bats, selected, roomCode, isHost }) {
+function BattingField({ bats, selected, roomCode, isHost }) {
     const [incomingPitch, setIncomingPitch] = useState(null);
     const [hint, setHint] = useState(null);
     const [swingResult, setSwingResult] = useState(null);
@@ -76,7 +76,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
     const [hintDuration, setHintDuration] = useState(0);
     const [fieldWidth, setFieldWidth] = useState(0);
 
-    // Mirror X coordinates from Pitching side
     const mirrorX = useCallback((x) => {
         const width = fieldRef.current?.clientWidth ?? 0;
         return width - x;
@@ -135,12 +134,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             }, (payload) => {
 
                 const pitch = payload.new;
-                const pitchData = pitches[pitch.pitch_type];
-                const effectiveSpeed = effectivePitchSpeed(pitchData.speed)
+                const effectiveSpeed = effectivePitchSpeed(pitch.speed)
                 const reactionTime = calcReactionTime(effectiveSpeed);
                 reactionTimeRef.current = reactionTime;
 
-                setSpinRow(getSpinRow(pitchData.spinType));
+                setSpinRow(getSpinRow(pitch.spin_type));
 
                 setIncomingPitch(pitch);
 
@@ -191,8 +189,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
 
                         let breakProgress = clamp(
-                            (t - pitchData.breakTiming) /
-                            (1 - pitchData.breakTiming),
+                            (t - pitch.break_timing) /
+                            (1 - pitch.break_timing),
                             0,
                             1
                         );
@@ -218,8 +216,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         const frame = getFrames(
                             t,
                             BALL_SPRITE.FRAMES_PER_SPIN,
-                            pitchData.spinRate,
-                            pitchData.spinDirection
+                            pitch.spin_rate,
+                            pitch.spin_direction
                         );
 
                         setFrameIndex(frame);
@@ -246,13 +244,12 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             if (hintShrinkingRef.current) clearTimeout(hintShrinkingRef.current);
             supabase.removeChannel(channel);
         };
-    }, [roomCode, pitches, mirrorX]);
+    }, [roomCode, mirrorX]);
 
     useEffect(() => {
         if (!canSwing || !incomingPitch || !hint) return;
 
-        const pitchData = pitches[incomingPitch.pitch_type];
-        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
+        const effectiveSpeed = effectivePitchSpeed(incomingPitch.speed);
         const reactionTime = calcReactionTime(effectiveSpeed);
         reactionTimeRef.current = reactionTime;
 
@@ -264,7 +261,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
             try {
                 setCanSwing(false)
-                setPitchTaken(true); // Timer Expired
+                setPitchTaken(true);
                 setLastPitchLocation({
                     x: mirrorX(incomingPitch.final_x),
                     y: incomingPitch.final_y
@@ -294,9 +291,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         return () => clearTimeout(autoTakeTimerRef.current);
 
-    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint, mirrorX]);
-
-    if (!pitches) return <div>Waiting for opponent pitches...</div>;
+    }, [canSwing, incomingPitch, isHost, roomCode, hint, mirrorX]);
 
     return (
         <>
@@ -318,8 +313,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     resolutionInProgressRef.current = true;
 
                     try {
-                        const pitchData = pitches[incomingPitch.pitch_type];
-                        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
+                        const effectiveSpeed = effectivePitchSpeed(incomingPitch.speed);
 
                         const swingAtTime = Date.now();
                         setCanSwing(false);
@@ -491,7 +485,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     < StrikeZone 
-                        pitches={pitches} 
                         selected={selected} 
                         visible={strikeZoneVisible} 
                     />

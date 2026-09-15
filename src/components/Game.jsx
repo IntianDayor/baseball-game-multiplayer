@@ -6,7 +6,7 @@ import BattingSelector from "./UI/batter/BattingSelector";
 import ScoreBoard from "./UI/general/ScoreBoard";
 import MiniMap from "./UI/general/MiniMap";
 import UtilityButtons from "./UI/general/UtilityButtons";
-import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import { coinChoice, updateCoinTossRes, updatePlayerRole, getMyPitchSet } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
 import Loading from "./Game/Loading";
@@ -16,10 +16,9 @@ const UTILITY_HOLD_MS = 2000;
 function Game({
     setScreen,
     bats,
+    uid,
     myPitches,
     setMyPitches,
-    opponentPitches,
-    setOpponentPitches,
     selected,
     setSelected,
     isHost,
@@ -178,8 +177,6 @@ function Game({
         isHost,
         scoreHome,
         scoreAway,
-        setMyPitches,
-        setOpponentPitches,
         setStrikes,
         setOuts,
         setBalls,
@@ -357,7 +354,6 @@ function Game({
                 bats={bats}
                 selected={selected}
                 setSelected={setSelected}
-                pitches={opponentPitches}
                 roomCode={roomCode}
                 strikes={strikes}
                 balls={balls}

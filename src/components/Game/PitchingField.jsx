@@ -237,12 +237,16 @@ function PitchingField({
                     power: powerTier,
                     pitch_type: selected,
                     is_strike: inZone,
-                    thrown_at: new Date().toISOString()
+                    thrown_at: new Date().toISOString(),
+                    speed: pitchData.speed,
+                    spin_type: pitchData.spinType,
+                    break_timing: pitchData.breakTiming,
+                    spin_rate: pitchData.spinRate,
+                    spin_direction: pitchData.spinDirection
                 });
 
             }}
         >
-            { /* Strike Zone */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                 < StrikeZone 
                     pitches={pitches} 
@@ -251,7 +255,6 @@ function PitchingField({
                 />
             </div>
 
-            {/* Crosshair */}
             <div className="absolute border-2 border-white rounded-full pointer-events-none"
                 style={{
                     width: crosshairSize,
@@ -263,7 +266,6 @@ function PitchingField({
             >
                 <BreakIndicator {...breakPreview} />
             </div>
-            {/* Input Hints */}
             <PitchInputHint 
                 cursorPos={cursorPos}
                 crosshairSize={crosshairSize}
@@ -272,7 +274,6 @@ function PitchingField({
                 isCursorMoving={isCursorMoving}
             />
 
-            {/* Power Bar */}
             <div className="absolute bottom-2 left-2 right-2 flex gap-1">
                 {[0, 1, 2, 3, 4].map(i => (
                     <div
@@ -282,7 +283,6 @@ function PitchingField({
                 ))}
             </div>
 
-            {/* Strike Feedback */}
             {thrown && (
                 <div className={`absolute top-2 left-2 text-sm font-bold 
                 ${thrown.is_strike ? 'text-green-400' : 'text-red-400'}`
@@ -291,7 +291,6 @@ function PitchingField({
                 </div>
             )}
 
-            {/* Temp Pitch Result visual */}
             <div className="absolute top-8 right-4">
                 {pitchResult === 'homerun' && <div className="text-red-400">HOMERUN!</div>}
                 {pitchResult === 'double' && <div className="text-red-400">DOUBLE!</div>}
@@ -303,7 +302,6 @@ function PitchingField({
                 {pitchResult === 'ball' && <div className="text-yellow-400">BALL!</div>}
             </div>
 
-            {/* Last Pitch Visual */}
             <LastPitchVisual
                 location={
                     lastPitchMarker
