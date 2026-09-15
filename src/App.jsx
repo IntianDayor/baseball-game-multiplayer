@@ -11,7 +11,7 @@ import { getExistingSession, signInAnonymous } from "./lib/supabase";
 function App() {
     const [screen, setScreen] = useState('menu');
     const [selected, setSelected] = useState('Q');
-
+    
     const [isHost, setIsHost] = useState(false);
     const [roomCode, setRoomCode] = useState('');
     const [uid, setUid] = useState(null);
@@ -24,6 +24,7 @@ function App() {
 
     useEffect(() => {
         async function init() {
+
             const existingUid = await getExistingSession();
             if (existingUid) {
                 setUid(existingUid);
@@ -40,7 +41,7 @@ function App() {
         setUid(id);
         setNeedsCaptcha(false);
     }
-
+    
     const renderScreen = () => {
         if (!uid) {
             return needsCaptcha
@@ -95,7 +96,17 @@ function App() {
         }
     };
 
-    return <div className="relative min-h-screen">{renderScreen()}</div>;
+    return (
+        <div className="relative min-h-screen">
+            {}
+            {renderScreen()}
+
+            {}
+            <div className="fixed bottom-2 right-2 text-xs font-mono text-white/40 select-none pointer-events-none z-50">
+               Build: {__APP_VERSION__}
+            </div>
+        </div>
+    );
 }
 
 export default App;

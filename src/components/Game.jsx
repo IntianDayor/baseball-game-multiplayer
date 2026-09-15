@@ -15,8 +15,8 @@ const UTILITY_HOLD_MS = 2000;
 
 function Game({
     setScreen,
-    bats,
     uid,
+    bats,
     myPitches,
     setMyPitches,
     selected,
@@ -28,16 +28,15 @@ function Game({
     scoreAway,
     scoreHome
 }) {
-
     function coinToss() {
         const coin = Math.floor(Math.random() * 2);
         return (coin === 1) ? 'HEADS' : 'TAILS';
     }
-
+    
     const [role, setRole] = useState('choosing');
     const [coinRes, setCoinRes] = useState(() => coinToss());
     const [chosenCoin, setChosenCoin] = useState('');
-    const [mySide, setMySide] = useState('');
+    const [mySide, setMySide] = useState(''); 
     const [tossWinner, setTossWinner] = useState(null);
 
     const [outs, setOuts] = useState(0);
@@ -45,7 +44,7 @@ function Game({
     const [balls, setBalls] = useState(0);
     const [inning, setInning] = useState(1);
     const [inningFrame, setInningFrame] = useState('top');
-
+    
     const [runners, setRunners] = useState({
         first: false,
         second: false,
@@ -74,12 +73,13 @@ function Game({
     useEffect(() => {
         return () => clearTimeout(pitchCooldownRef.current);
     }, []);
-
-    function onSuper() {
-        return undefined;
+    
+    function onSuper(){
+        
+        return <div>This feature isn't available yet...</div>
     }
 
-    async function onUtilityButton(role) {
+    async function onUtilityButton(role) {        
         if (role === "pitcher") {
             if (hasActivePitch) return;
 
@@ -89,10 +89,15 @@ function Game({
                 payload: {}
             });
         }
+        
+        if (role === "batter") {
+            return;
+        }
     }
-
+    
     const superHold = useHoldTrigger(onSuper, UTILITY_HOLD_MS);
     const utilityHold = useHoldTrigger(() => onUtilityButton(role), UTILITY_HOLD_MS);
+    
     useEffect(() => {
         if (!roomCode) return;
 
@@ -124,9 +129,9 @@ function Game({
                     setScoreAway(room.score_away);
                     setScreen('gameover');
                     return;
-                }
+                }            
                 if (room.coin_result) {
-                    setCoinRes(room.coin_result);
+                    setCoinRes(room.coin_result);   
                     const chooserWon = room.coin_result === room.coin_choice.toUpperCase();
                     setTossWinner(isHost ? !chooserWon : chooserWon)
                 }
@@ -137,23 +142,12 @@ function Game({
                         setMySide(room.coin_choice === 'heads' ? 'TAILS' : 'HEADS');
                     }
                 }
-
+                
                 if (room.current_role_p1 && room.current_role_p2) {
                     const myRole = isHost ? room.current_role_p1 : room.current_role_p2;
                     setRole(myRole);
                 }
-
-                const hostPitches = room.pitch_set_p1;
-                const guestPitches = room.pitch_set_p2;
-
-                if (isHost) {
-                    setMyPitches(hostPitches ?? null);
-                    setOpponentPitches(guestPitches ?? null);
-                } else {
-                    setMyPitches(guestPitches ?? null);
-                    setOpponentPitches(hostPitches ?? null);
-                }
-
+                
                 setStrikes(room.strikes);
                 setOuts(room.outs);
                 setBalls(room.balls);
@@ -188,9 +182,14 @@ function Game({
         setScreen
     ]);
 
+    useEffect(() => {
+        if (!roomCode || !uid) return;
+
+        getMyPitchSet(roomCode, uid).then(setMyPitches);
+    }, [roomCode, uid, setMyPitches]);
 
     if (role === 'choosing') return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">            
             <div className="relative flex items-center justify-center w-45 h-45 rounded-full 
               bg-linear-to-tr from-yellow-600 via-yellow-400 to-yellow-200 
               shadow-[0_10px_20px_rgba(0,0,0,0.3),inset_0_-4px_8px_rgba(0,0,0,0.5),inset_0_4px_8px_rgba(255,255,255,0.8)] 
@@ -244,7 +243,7 @@ function Game({
                                 <button
                                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
                                     onClick={async () => {
-                                        await updatePlayerRole(roomCode, 'pitcher', isHost)
+                                        await updatePlayerRole(roomCode, 'pitcher', isHost) 
                                     }}
                                 >
                                     Pitcher First
@@ -252,7 +251,7 @@ function Game({
                                 <button
                                     className="bg-gray-300 border-2 border-gray-700 border-b-12 rounded-4xl px-6 py-4 cursor-pointer font-bold text-gray-900 text-center w-50 -translate-y-1 active:translate-y-0 active:border-b-0"
                                     onClick={async () => {
-                                        await updatePlayerRole(roomCode, 'batter', isHost)
+                                        await updatePlayerRole(roomCode, 'batter', isHost) 
                                     }}
                                 >
                                     Batter First
@@ -270,6 +269,7 @@ function Game({
     if (role === 'pitcher') return (
         <div className="relative flex flex-col items-center justify-center min-h-screen bg-green-900">
 
+            
             <div className="absolute left-4 top-4">
                 <ScoreBoard
                     inning={inning}
@@ -282,11 +282,11 @@ function Game({
                     roomCode={roomCode}
                 />
             </div>
-
+        
             <div className="absolute right-4 top-4">
                 <MiniMap runners={runners} />
             </div>
-
+            
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Pitching ({teamSide})
@@ -344,7 +344,7 @@ function Game({
             <div className="absolute right-4 top-4">
                 <MiniMap runners={runners} />
             </div>
-
+            
             <div className="size-10 rounded-2xl bg-radial-[at_25%_25%] from-orange-300 to-yellow-950 to-75% w-70 text-2xl text-center text-white font-extrabold text-shadow-black"
             >
                 Batting ({teamSide})
@@ -377,7 +377,7 @@ function Game({
 
         </div>
     );
-
+  
     return (
         <Loading />
     );

@@ -38,7 +38,7 @@ export function resolvePitchLocation(pitch, { aim_x, aim_y, power = 0 }) {
     chaos = false,
     disguised = false,
   } = pitch;
-
+  
   const {
     moveX: rawMoveX,
     moveY: rawMoveY,
@@ -50,7 +50,7 @@ export function resolvePitchLocation(pitch, { aim_x, aim_y, power = 0 }) {
 
   const moveX = clamp(rawMoveX, -MAX_BREAK_PX, MAX_BREAK_PX);
   const moveY = clamp(rawMoveY, -MAX_BREAK_PX, MAX_BREAK_PX);
-
+  
   const speedFactor = clamp(speed / 10, 0.25, 1);
 
   let controlSpread = clamp(16 * (1 - speedFactor), 3, 14);
@@ -61,10 +61,10 @@ export function resolvePitchLocation(pitch, { aim_x, aim_y, power = 0 }) {
 
   const noiseX = randomRange(-controlSpread, controlSpread);
   const noiseY = randomRange(-controlSpread, controlSpread);
-
+  
   const final_x = aim_x + moveX + noiseX;
   const final_y = aim_y + moveY + noiseY;
-
+  
   const hintBias = 0.25;
   const predictedX = aim_x + moveX * hintBias;
   const predictedY = aim_y + moveY * hintBias;

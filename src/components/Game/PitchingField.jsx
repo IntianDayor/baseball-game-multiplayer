@@ -34,7 +34,7 @@ function PitchingField({
     const atMaxSinceRef = useRef(null);
     const thrownRef = useRef(null);
     const cursorIdleTimeoutRef = useRef(null);
-
+    
     const crosshairSize = 32 + powerTier * 8
     const [isCursorMoving, setIsCursorMoving] = useState(false);
 
@@ -74,7 +74,7 @@ function PitchingField({
 
         return () => supabase.removeChannel(channel);
     }, [roomCode, resetPitchState]);
-
+    
     useEffect(() => {
         if (!isCharging) return;
 
@@ -132,7 +132,7 @@ function PitchingField({
 
         return () => supabase.removeChannel(channel)
     }, [roomCode, resetPitchState]);
-
+    
     useEffect(() => {
         return () => clearTimeout(cursorIdleTimeoutRef.current);
     }, []);
@@ -266,6 +266,7 @@ function PitchingField({
             >
                 <BreakIndicator {...breakPreview} />
             </div>
+            
             <PitchInputHint 
                 cursorPos={cursorPos}
                 crosshairSize={crosshairSize}
@@ -282,7 +283,7 @@ function PitchingField({
                     />
                 ))}
             </div>
-
+     
             {thrown && (
                 <div className={`absolute top-2 left-2 text-sm font-bold 
                 ${thrown.is_strike ? 'text-green-400' : 'text-red-400'}`
@@ -290,7 +291,7 @@ function PitchingField({
                     {thrown.is_strike ? 'STRIKE ZONE' : 'BALL'} - Power Tier: {thrown.powerTier}/4
                 </div>
             )}
-
+  
             <div className="absolute top-8 right-4">
                 {pitchResult === 'homerun' && <div className="text-red-400">HOMERUN!</div>}
                 {pitchResult === 'double' && <div className="text-red-400">DOUBLE!</div>}

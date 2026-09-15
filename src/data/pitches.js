@@ -227,10 +227,9 @@ export function getGamePitches() {
     const fixed = PITCH_LIBRARY.fastball
 
     const pool = Object.values(PITCH_LIBRARY).filter(p => !p.fixed);
-
-    // Shuffle pool
+    
     const shuffled = shuffleArray(pool);
-
+    
     return {
         Q: {...fixed, key: "Q" },
         W: {...shuffled[0], key: "W"},

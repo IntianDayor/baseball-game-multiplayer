@@ -29,7 +29,7 @@ const MAX_PITCH_SPEED = 10;
 const HITTABLE_GLOW_MS = 150;
 const MIN_HINT_MS = 400;
 const MAX_HINT_MS = 500;
-const LATE_SWING_BUFFER_MS = 100;
+const LATE_SWING_BUFFER_MS = 100; 
 
 const calcReactionTime = (effectiveSpeed) => {
     const speedT = clamp(
@@ -51,10 +51,10 @@ function BattingField({ bats, selected, roomCode, isHost }) {
     const [isBallFlying, setIsBallFlying] = useState(false);
     const [timingQuality, setTimingQuality] = useState(null);
     const [hintShrinking, setHintShrinking] = useState(false);
-
+  
     const hitZone = bats[selected].radius;
     const [lastPitchLocation, setLastPitchLocation] = useState(null);
-
+   
     const readDelayRef = useRef(null);
     const autoTakeTimerRef = useRef(null);
     const hintDurationRef = useRef(null);
@@ -75,7 +75,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
     const [strikeZoneVisible, setStrikeZoneVisible] = useState(true);
     const [hintDuration, setHintDuration] = useState(0);
     const [fieldWidth, setFieldWidth] = useState(0);
-
+ 
     const mirrorX = useCallback((x) => {
         const width = fieldRef.current?.clientWidth ?? 0;
         return width - x;
@@ -120,7 +120,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
 
         return () => supabase.removeChannel(channel);
     }, [roomCode, isHost]);
-
+    
     useEffect(() => {
         if (!roomCode) return;
 
@@ -156,7 +156,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                 setStrikeZoneVisible(true);
 
                 hintShrinkingRef.current = setTimeout(() => setHintShrinking(true), 20);
-
+           
                 const readDelay = Math.round((10 - effectiveSpeed) * 100 + 200);
                 const duration = clamp(readDelay, MIN_HINT_MS, MAX_HINT_MS);
                 hintDurationRef.current = duration;
@@ -187,7 +187,6 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                             1
                         );
 
-
                         let breakProgress = clamp(
                             (t - pitch.break_timing) /
                             (1 - pitch.break_timing),
@@ -212,7 +211,6 @@ function BattingField({ bats, selected, roomCode, isHost }) {
 
                         setBallPos({ x, y });
 
-
                         const frame = getFrames(
                             t,
                             BALL_SPRITE.FRAMES_PER_SPIN,
@@ -221,7 +219,6 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                         );
 
                         setFrameIndex(frame);
-
 
                         if (
                             elapsed <
@@ -245,7 +242,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
             supabase.removeChannel(channel);
         };
     }, [roomCode, mirrorX]);
-
+    
     useEffect(() => {
         if (!canSwing || !incomingPitch || !hint) return;
 
@@ -261,7 +258,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
 
             try {
                 setCanSwing(false)
-                setPitchTaken(true);
+                setPitchTaken(true); 
                 setLastPitchLocation({
                     x: mirrorX(incomingPitch.final_x),
                     y: incomingPitch.final_y
@@ -351,7 +348,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                                 selected,
                             )
                             : null;
-
+   
                         let finalResult = isHit ? hitType : 'swing_miss'
                         if (
                             isHit &&
@@ -362,7 +359,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                             });
                             finalResult = fielderRoll.result;
                         }
-
+                        
                         setSwingResult(finalResult);
                         setLastPitchLocation({
                             x: mirrorX(incomingPitch.final_x),
@@ -387,7 +384,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                     }
                 }}
             >
-
+                
                 <div className="absolute w-4 h-4 border-2 border-white rounded-full pointer-events-none"
                     style={{
                         width: `${hitZone * 2}px`,
@@ -457,7 +454,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                         }}
                     />
                 )}
-
+      
                 <LastPitchVisual location={lastPitchLocation} />
 
                 {swingResult && (
@@ -482,7 +479,7 @@ function BattingField({ bats, selected, roomCode, isHost }) {
                         {incomingPitch.is_strike ? 'CALLED STRIKE!' : 'BALL!'}
                     </div>
                 )}
-
+                
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     < StrikeZone 
                         selected={selected} 

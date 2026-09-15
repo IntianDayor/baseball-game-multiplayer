@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { createRoom, joinRoom, startGame } from "../../lib/rooms";
 
 function Lobby({ setScreen, isHost, setIsHost, roomCode, setRoomCode, uid }) {
+    
     function generateRandomCode() {
         return Math.random().toString(36).substring(2, 8).toUpperCase();
     }

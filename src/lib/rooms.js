@@ -81,22 +81,6 @@ export async function getMyPitchSet(roomCode, uid) {
   return data.pitches;
 }
 
-export async function getMyPitchSet(roomCode, uid) {
-  const { data, error } = await supabase
-    .from("pitch_sets")
-    .select("pitches")
-    .eq("room_id", roomCode)
-    .eq("player_uid", uid)
-    .single();
-
-  if (error) {
-    console.error("getMyPitchSet error:", error);
-    return null;
-  }
-
-  return data.pitches;
-}
-
 export async function startGame(roomCode) {
   const { data, error } = await supabase
     .from("rooms")
@@ -151,7 +135,7 @@ export async function checkRoomStatus(roomCode) {
 }
 
 export async function updatePlayerRole(roomCode, chosenRole, isHost) {
-  const opposite = chosenRole === "pitcher" ? "batter" : "pitcher";
+  const opposite = chosenRole === "pitcher" ? "batter" : "pitcher"; 
 
   const { data, error } = await supabase
     .from("rooms")
@@ -219,8 +203,8 @@ export async function swingAt(pitchId, roomCode, swingData) {
 }
 
 export async function updateGameState(roomCode, result, isStrike, isHost) {
-    const current = await checkRoomStatus(roomCode);
-
+  const current = await checkRoomStatus(roomCode);
+  
   let state = {
     ...current,
     ...applyCountEngine(current, result),
@@ -229,7 +213,6 @@ export async function updateGameState(roomCode, result, isStrike, isHost) {
   const walk = applyWalkEngine(state, result);
   state = walk.state;
   result = walk.result;
-
   state = {
     ...state,
     ...applyRunnerEngine(state, result, isHost),
