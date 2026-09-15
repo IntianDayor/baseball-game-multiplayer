@@ -252,7 +252,12 @@ function PitchingField({
                     power: powerTier,
                     pitch_type: selected,
                     is_strike: inZone,
-                    thrown_at: new Date().toISOString()
+                    thrown_at: new Date().toISOString(),
+                    speed: pitchData.speed,
+                    spin_type: pitchData.spinType,
+                    break_timing: pitchData.breakTiming,
+                    spin_rate: pitchData.spinRate,
+                    spin_direction: pitchData.spinDirection
                 });
 
             }}

@@ -20,7 +20,6 @@ function App() {
     
     const [myPitches, setMyPitches] = useState(null);
     const [bats] = useState(() => getGameBats());
-    const [opponentPitches, setOpponentPitches] = useState(null);
     const [scoreHome, setScoreHome] = useState(0);
     const [scoreAway, setScoreAway] = useState(0);
 
@@ -75,8 +74,6 @@ function App() {
                         bats={bats}
                         myPitches={myPitches}
                         setMyPitches={setMyPitches}
-                        opponentPitches={opponentPitches}
-                        setOpponentPitches={setOpponentPitches}
                         setSelected={setSelected}
                         selected={selected}
                         isHost={isHost}

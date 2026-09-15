@@ -6,7 +6,7 @@ import BattingSelector from "./UI/batter/BattingSelector";
 import ScoreBoard from "./UI/general/ScoreBoard";
 import MiniMap from "./UI/general/MiniMap";
 import UtilityButtons from "./UI/general/UtilityButtons";
-import { coinChoice, updateCoinTossRes, updatePlayerRole } from "../lib/rooms";
+import { coinChoice, updateCoinTossRes, updatePlayerRole, getMyPitchSet } from "../lib/rooms";
 import { supabase } from "../lib/supabase";
 import { useHoldTrigger } from "../hooks/hold-trigger";
 import Loading from "./Game/Loading";
@@ -17,10 +17,9 @@ function Game({
     setScreen,
     uid,
     bats,
+    uid,
     myPitches,
     setMyPitches,
-    opponentPitches,
-    setOpponentPitches,
     selected,
     setSelected,
     isHost,
@@ -169,18 +168,6 @@ function Game({
                     setRole(myRole);
                 }
 
-                // Pitch Set Assignment
-                const hostPitches = room.pitch_set_p1;
-                const guestPitches = room.pitch_set_p2;
-
-                if (isHost) {
-                    setMyPitches(hostPitches ?? null);
-                    setOpponentPitches(guestPitches ?? null);
-                } else {
-                    setMyPitches(guestPitches ?? null);
-                    setOpponentPitches(hostPitches ?? null);
-                }
-
                 /* Game State Assignment */
 
                 // Data Update
@@ -208,8 +195,6 @@ function Game({
         isHost,
         scoreHome,
         scoreAway,
-        setMyPitches,
-        setOpponentPitches,
         setStrikes,
         setOuts,
         setBalls,
@@ -220,6 +205,13 @@ function Game({
         setRunners,
         setScreen
     ]);
+
+    // Pitch Set Anti-cheat
+    useEffect(() => {
+        if (!roomCode || !uid) return;
+
+        getMyPitchSet(roomCode, uid).then(setMyPitches);
+    }, [roomCode, uid, setMyPitches]);
 
 
     /* COIN TOSS SCREEN BEFORE GAME */
@@ -399,7 +391,6 @@ function Game({
                 bats={bats}
                 selected={selected}
                 setSelected={setSelected}
-                pitches={opponentPitches}
                 roomCode={roomCode}
                 strikes={strikes}
                 balls={balls}

@@ -43,7 +43,7 @@ const calcReactionTime = (effectiveSpeed) => {
     return Math.round(lerp(MAX_REACTION_MS, MIN_REACTION_MS, speedT));
 }
 
-function BattingField({ pitches, bats, selected, roomCode, isHost }) {
+function BattingField({ bats, selected, roomCode, isHost }) {
     /* VARIABLES */
     // Batting logic Variables
     const [incomingPitch, setIncomingPitch] = useState(null);
@@ -145,12 +145,11 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             }, (payload) => {
 
                 const pitch = payload.new;
-                const pitchData = pitches[pitch.pitch_type];
-                const effectiveSpeed = effectivePitchSpeed(pitchData.speed)
+                const effectiveSpeed = effectivePitchSpeed(pitch.speed)
                 const reactionTime = calcReactionTime(effectiveSpeed);
                 reactionTimeRef.current = reactionTime;
 
-                setSpinRow(getSpinRow(pitchData.spinType));
+                setSpinRow(getSpinRow(pitch.spin_type));
 
                 setIncomingPitch(pitch);
 
@@ -204,8 +203,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         // Ball movement //
 
                         let breakProgress = clamp(
-                            (t - pitchData.breakTiming) /
-                            (1 - pitchData.breakTiming),
+                            (t - pitch.break_timing) /
+                            (1 - pitch.break_timing),
                             0,
                             1
                         );
@@ -232,8 +231,8 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                         const frame = getFrames(
                             t,
                             BALL_SPRITE.FRAMES_PER_SPIN,
-                            pitchData.spinRate,
-                            pitchData.spinDirection
+                            pitch.spin_rate,
+                            pitch.spin_direction
                         );
 
                         setFrameIndex(frame);
@@ -261,14 +260,13 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
             if (hintShrinkingRef.current) clearTimeout(hintShrinkingRef.current);
             supabase.removeChannel(channel);
         };
-    }, [roomCode, pitches, mirrorX]);
+    }, [roomCode, mirrorX]);
 
     // Game State Listener / Auto-take Timer
     useEffect(() => {
         if (!canSwing || !incomingPitch || !hint) return;
 
-        const pitchData = pitches[incomingPitch.pitch_type];
-        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
+        const effectiveSpeed = effectivePitchSpeed(incomingPitch.speed);
         const reactionTime = calcReactionTime(effectiveSpeed);
         reactionTimeRef.current = reactionTime;
 
@@ -310,10 +308,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
 
         return () => clearTimeout(autoTakeTimerRef.current);
 
-    }, [canSwing, incomingPitch, isHost, pitches, roomCode, hint, mirrorX]);
-
-    // Pitch Set fetching guard
-    if (!pitches) return <div>Waiting for opponent pitches...</div>;
+    }, [canSwing, incomingPitch, isHost, roomCode, hint, mirrorX]);
 
     return (
         <>
@@ -336,8 +331,7 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                     resolutionInProgressRef.current = true;
 
                     try {
-                        const pitchData = pitches[incomingPitch.pitch_type];
-                        const effectiveSpeed = effectivePitchSpeed(pitchData.speed);
+                        const effectiveSpeed = effectivePitchSpeed(incomingPitch.speed);
 
                         const swingAtTime = Date.now();
                         setCanSwing(false);
@@ -518,7 +512,6 @@ function BattingField({ pitches, bats, selected, roomCode, isHost }) {
                 {/* Strike Zone */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     < StrikeZone 
-                        pitches={pitches} 
                         selected={selected} 
                         visible={strikeZoneVisible} 
                     />
